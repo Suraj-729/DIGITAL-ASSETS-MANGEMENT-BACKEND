@@ -3,15 +3,17 @@ const { getDb } = require("../Db/Db");
 
 async function createAsset(req, res) {
   try {
+    console.log("Received  Data:", JSON.stringify(req.body, null, 2));
     const id = await AssetsModel.createAsset(req.body);
-    res
-      .status(201)
-      .json({ message: "Asset created successfully", assetId: id });
+    res.status(201).json({ message: 'Asset created successfully', assetId: id });
+
+  
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error creating asset" });
   }
 }
+
 
 async function getAsset(req, res) {
   try {
