@@ -3,8 +3,13 @@ const router = express.Router();
 
 const AssetsController = require('../Controllers/assets.controller');
 const UserController = require('../Controllers/user.controller'); // Add this line
-
-router.post('/assets/createAsset', AssetsController.createAsset);
+const upload = require('../middlewares/upload')
+// router.post('/assets/createAsset', AssetsController.createAsset);
+router.post(
+    "/assets/createAsset",
+    upload.single("certificate"), // or upload.fields([...]) if multiple files
+    AssetsController.createAsset
+  );
 router.get('/assets/:assetsId', AssetsController.getAsset);
 router.delete('/assets/:assetsId', AssetsController.deleteAsset);
 router.put('/assets/update/bp/:assetsId', AssetsController.updateBP);

@@ -1,16 +1,62 @@
 const AssetsModel = require("../Models/assets.model");
 const { getDb } = require("../Db/Db");
 
-async function createAsset(req, res) {
-  try {
-    console.log("Received  Data:", JSON.stringify(req.body, null, 2));
-    const id = await AssetsModel.createAsset(req.body);
-    res.status(201).json({ message: 'Asset created successfully', assetId: id });
+// async function createAsset(req, res) {
+//   try {
+//     console.log("Received  Data:", JSON.stringify(req.body, null, 2));
+//     const id = await AssetsModel.createAsset(req.body);
+//     res.status(201).json({ message: 'Asset created successfully', assetId: id });
 
   
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ error: "Error creating asset" });
+//   }
+// }
+
+async function createAsset(req, res) {
+  try {
+    // Log full request body for debugging
+    console.log("Received full request body:", req.body);
+
+    // Parse each section if present
+    const BP = req.body.BP ? JSON.parse(req.body.BP) : null;
+    const SA = req.body.SA ? JSON.parse(req.body.SA) : null;
+    const TS = req.body.TS ? JSON.parse(req.body.TS) : null;
+    const Infra = req.body.Infra ? JSON.parse(req.body.Infra) : null;
+
+    // Log each section for clarity
+    if (BP) console.log("Parsed Basic Profile (BP):", JSON.stringify(BP, null, 2));
+    if (SA) console.log("Parsed Security Audit (SA):", JSON.stringify(SA, null, 2));
+    if (TS) console.log("Parsed Technology Stack (TS):", JSON.stringify(TS, null, 2));
+    if (Infra) console.log("Parsed Infrastructure:", JSON.stringify(Infra, null, 2));
+
+    // Log file if uploaded
+    if (req.file) {
+      console.log("Received Certificate File:");
+      console.log({
+        filename: req.file.originalname,
+        mimetype: req.file.mimetype,
+        size: req.file.size,
+      });
+    } else {
+      console.warn("No certificate file uploaded.");
+    }
+
+    // Example: Save to DB (adjust according to your model)
+    const assetId = await AssetsModel.createAsset({
+      BP,
+      SA,
+      TS,
+      Infra,
+      certificate: req.file || null,
+    });
+
+    return res.status(201).json({ message: "Asset created", assetId });
+
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error creating asset" });
+    console.error("Error in createAsset:", err);
+    return res.status(500).json({ error: "Error creating asset", details: err.message });
   }
 }
 
