@@ -1,63 +1,79 @@
 const AssetsModel = require("../Models/assets.model");
 const { getDb } = require("../Db/Db");
 
+
+
 // async function createAsset(req, res) {
 //   try {
-//     console.log("Received  Data:", JSON.stringify(req.body, null, 2));
-//     const id = await AssetsModel.createAsset(req.body);
-//     res.status(201).json({ message: 'Asset created successfully', assetId: id });
+//     // Log full request body for debugging
+//     console.log("Received full request body:", req.body.BP);
 
-  
+//     // Parse each section if present
+//     let bpData = req.body.BP;
+//     let SA = req.body.SA; // <-- Use SA for consistency
+//     const TS = req.body.TS;
+//     const Infra = req.body.Infra ;
+
+//     // Log each section for clarity
+//     if (bpData) console.log("Parsed Basic Profile (BP):", JSON.stringify(bpData, null, 2));
+//     if (SA) console.log("Parsed Security Audit (SA):", JSON.stringify(SA, null, 2));
+//     if (TS) console.log("Parsed Technical Stack (TS):", JSON.stringify(TS, null, 2));
+//     if (Infra) console.log("Parsed Infra:", JSON.stringify(Infra, null, 2));
+
+//     // Log file if uploaded
+//     if (req.file) {
+//       console.log("Certificate file uploaded:", req.file.originalname);
+//     } else {
+//       console.log("No certificate file uploaded.");
+//     }
+
+//     // Check for required sections
+//     if (!bpData || !SA || !TS || !Infra) {
+//       return res.status(400).json({ error: "Missing required asset sections (BP, SA, TS, Infra)" });
+//     }
+
+//     // Example: Save to DB (adjust according to your model)
+//     const assetId = await AssetsModel.createAsset({
+//       BP: bpData,
+//       SA,
+//       TS,
+//       Infra,
+//       certificate: req.file || null,
+//     });
+
+//     return res.status(201).json({ message: "Asset created", assetId });
+
 //   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ error: "Error creating asset" });
+//     console.error("Error in createAsset:", err);
+//     return res.status(500).json({ error: "Error creating asset", details: err.message });
 //   }
 // }
 
 async function createAsset(req, res) {
   try {
-    // Log full request body for debugging
-    console.log("Received full request body:", req.body);
+  const BP = JSON.parse(req.body.BP);
+  const SA = JSON.parse(req.body.SA);
+  const TS = JSON.parse(req.body.TS);
+  const Infra = JSON.parse(req.body.Infra);
 
-    // Parse each section if present
-    const BP = req.body.BP ? JSON.parse(req.body.BP) : null;
-    const SA = req.body.SA ? JSON.parse(req.body.SA) : null;
-    const TS = req.body.TS ? JSON.parse(req.body.TS) : null;
-    const Infra = req.body.Infra ? JSON.parse(req.body.Infra) : null;
-
-    // Log each section for clarity
-    if (BP) console.log("Parsed Basic Profile (BP):", JSON.stringify(BP, null, 2));
-    if (SA) console.log("Parsed Security Audit (SA):", JSON.stringify(SA, null, 2));
-    if (TS) console.log("Parsed Technology Stack (TS):", JSON.stringify(TS, null, 2));
-    if (Infra) console.log("Parsed Infrastructure:", JSON.stringify(Infra, null, 2));
-
-    // Log file if uploaded
-    if (req.file) {
-      console.log("Received Certificate File:");
-      console.log({
-        filename: req.file.originalname,
-        mimetype: req.file.mimetype,
-        size: req.file.size,
-      });
-    } else {
-      console.warn("No certificate file uploaded.");
-    }
-
-    // Example: Save to DB (adjust according to your model)
-    const assetId = await AssetsModel.createAsset({
-      BP,
-      SA,
-      TS,
-      Infra,
-      certificate: req.file || null,
-    });
-
-    return res.status(201).json({ message: "Asset created", assetId });
-
-  } catch (err) {
-    console.error("Error in createAsset:", err);
-    return res.status(500).json({ error: "Error creating asset", details: err.message });
+  if (req.file) {
+    SA.certificate = req.file.originalname;
   }
+
+  const assetId = await AssetsModel.createAsset({
+    BP,
+    SA,
+    TS,
+    Infra,
+    certificate: req.file || null,
+  });
+
+  return res.status(201).json({ message: "Asset created", assetId });
+} catch (err) {
+  console.error("Error in createAsset:", err);
+  console.log("Request body:", req.body); // 👈 Debug what was received
+  return res.status(500).json({ error: "Error creating asset", details: err.message });
+}
 }
 
 
@@ -319,63 +335,35 @@ async function getAssetsByDepartment(req, res) {
   }
 }
 
-async function getAssetByProjectName(req, res) {
-  try {
-    const db = getDb();
-    const projectName = req.params.projectName;
+// async function getAssetByProjectName(req, res) {
+//   try {
+//     const db = getDb();
+//     const projectName = req.params.projectName;
 
-    const asset = await db.collection("Assets").findOne({
-      "BP.name": { $regex: new RegExp(`^${projectName}$`, "i") }, // case-insensitive match
-    });
+//     const asset = await db.collection("Assets").findOne({
+//       "BP.name": { $regex: new RegExp(`^${projectName}$`, "i") }, // case-insensitive match
+//     });
 
-    if (!asset) {
-      return res
-        .status(404)
-        .json({ error: `No asset found with project name '${projectName}'` });
-    }
+//     if (!asset) {
+//       return res
+//         .status(404)
+//         .json({ error: `No asset found with project name '${projectName}'` });
+//     }
 
-    // Restructure the asset so that projectName appears after assetsId
-    const modifiedAsset = {
-      assetsId: asset.assetsId,
-      projectName: asset.BP.name,
-      BP: asset.BP,
-      SA: asset.SA,
-      Infra: asset.Infra,
-      TS: asset.TS,
-    };
+//     // Restructure the asset so that projectName appears after assetsId
+//     const modifiedAsset = {
+//       assetsId: asset.assetsId,
+//       projectName: asset.BP.name,
+//       BP: asset.BP,
+//       SA: asset.SA,
+//       Infra: asset.Infra,
+//       TS: asset.TS,
+//     };
 
-    res.status(200).json(modifiedAsset);
-  } catch (err) {
-    console.error(err);
-    res
-      .status(500)
-      .json({ error: "Failed to fetch asset", details: err.message });
-  }
-}
+//     res.status(200).json(modifiedAsset);
+//   } catch
 
-async function getAllProjects(req, res) {
-  try {
-    const db = getDb();
-    const assets = await db.collection("Assets").find({}).toArray();
 
-    if (!assets.length) {
-      return res.status(404).json({ error: "No projects found" });
-    }
-
-    // Create an array of project names
-    const projectNames = assets.map((asset) => {
-      return `${asset.assetsId} - ${asset.BP.name}`;
-    });
-
-    return res.status(200).json({ projects: projectNames });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({
-      error: "Failed to fetch all projects",
-      details: err.message,
-    });
-  }
-}
 
 module.exports = {
   createAsset,
@@ -387,7 +375,6 @@ module.exports = {
   updateTS,
   getAssetsByDataCentre,
   getAssetsByDepartment,
-  getAssetByProjectName,
-  getAllProjects
-
+  // getAssetByProjectName, // Make sure this exists!
+  // getAllProjects         // Make sure this exists!
 };

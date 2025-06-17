@@ -5,11 +5,7 @@ const AssetsController = require('../Controllers/assets.controller');
 const UserController = require('../Controllers/user.controller'); // Add this line
 const upload = require('../middlewares/upload')
 // router.post('/assets/createAsset', AssetsController.createAsset);
-router.post(
-    "/assets/createAsset",
-    upload.single("certificate"), // or upload.fields([...]) if multiple files
-    AssetsController.createAsset
-  );
+router.post('/assets/createAsset', upload.single('certificate'), AssetsController.createAsset);
 router.get('/assets/:assetsId', AssetsController.getAsset);
 router.delete('/assets/:assetsId', AssetsController.deleteAsset);
 router.put('/assets/update/bp/:assetsId', AssetsController.updateBP);
@@ -18,8 +14,8 @@ router.put('/assets/update/infra/:assetsId', AssetsController.updateInfra);
 router.put('/assets/update/ts/:assetsId', AssetsController.updateTS);
 router.get('/assets/datacentre/:dataCentre', AssetsController.getAssetsByDataCentre);
 router.get('/assets/by-department/:deptName', AssetsController.getAssetsByDepartment);
-router.get('/assets/project/:projectName', AssetsController.getAssetByProjectName);
-router.get('/assets/all-projects', AssetsController.getAllProjects);
+// router.get('/assets/project/:projectName', AssetsController.getAssetByProjectName);
+// router.get('/assets/all-projects', AssetsController.getAllProjects);
 
 // User routes
 router.post('/users', UserController.createUser);
