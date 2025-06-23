@@ -125,7 +125,7 @@ async function updateBP(req, res) {
       {
         $set: {
           "BP.name": data.name,
-          "BP.prismId": data.prismid,
+          "BP.prismId": data.prismId,
           "BP.deptName": data.deptname,
           "BP.url": data.url,
           "BP.publicIp": data.public_ip,
@@ -335,6 +335,67 @@ async function getAssetsByDepartment(req, res) {
   }
 }
 
+async function getDashboardAllProjectBySIO(req, res) {
+  try {
+    const db = getDb();
+    
+    const pipeline = [
+      {
+        $project: {
+          _id: 0,
+          assetsId: 1,
+          prismId: "$BP.prismId",
+          HOD: "$BP.HOD",
+          deptName: "$BP.deptName",
+          projectName: "$BP.name",
+          securityAudits: "$SA.securityAudit"
+        }
+      },
+      {
+        $unwind: {
+          path: "$securityAudits",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $project: {
+          assetsId: 1,
+          prismId: 1,
+          HOD: 1,
+          deptName: 1,
+          projectName: 1,
+          auditDate: "$securityAudits.auditDate",
+          expireDate: "$securityAudits.expireDate",
+          tlsNextExpiry: "$securityAudits.tlsNextExpiry",
+          sslLabScore: "$securityAudits.sslLabScore"
+        }
+      },
+      {
+        $sort: {
+          expireDate: 1
+        }
+      }
+    ];
+
+    const dashboardData = await db.collection("Assets").aggregate(pipeline).toArray();
+
+    if (!dashboardData.length) {
+      return res.status(404).json({ 
+        error: "No projects found for dashboard" 
+      });
+    }
+
+    res.status(200).json(dashboardData);
+
+  } catch (err) {
+    console.error("Error in getDashboardAllProjectBySIO:", err);
+    res.status(500).json({ 
+      error: "Failed to fetch dashboard data", 
+      details: err.message 
+    });
+  }
+}
+
 // async function getAssetByProjectName(req, res) {
 //   try {
 //     const db = getDb();
@@ -375,6 +436,7 @@ module.exports = {
   updateTS,
   getAssetsByDataCentre,
   getAssetsByDepartment,
+  getDashboardAllProjectBySIO
   // getAssetByProjectName, // Make sure this exists!
   // getAllProjects         // Make sure this exists!
 };

@@ -1,103 +1,74 @@
-// const express = require('express');
-// const cors = require('cors');
-// const bodyParser = require('body-parser');
-// const { connectToDb } = require('./Db/Db'); // Import connectToDb
-// const { PORT, DB_NAME } = require('./Config/Config'); // Import PORT and DB_NAME from config
-// const assetsRoutes = require('./Routes/assets.route'); // Import assets routes
 
-// const app = express();
 
-// // Middleware Setup
-// // Order matters for middleware!
-// app.use(cors({
-//   origin: 'http://localhost:3000', // Allow only your frontend origin
-//   credentials: true                // Allow cookies and credentials
-// }));
-// app.use(express.json({ limit: '50mb' })); // Parse JSON bodies with a larger limit
-// app.use(express.urlencoded({ limit: '50mb', extended: true })); // Parse URL-encoded bodies
-
-// // Custom middleware for logging content length (optional, for debugging)
-// app.use((req, res, next) => {
-//   console.log('Request content length:', req.headers['content-length']);
-//   next();
-// });
-
-// // Root route
-// app.get('/', (req, res) => {
-//   res.send("Hey! The Nic is running.");
-// });
-
-// // Routes
-// app.use('/', assetsRoutes); // Mount assets routes
-
-// // Function to start the server
-// async function startServer() {
-//   try {
-//     await connectToDb(); // Connect to the database
-
-//     // Listen for incoming requests
-//     app.listen(PORT, () => {
-//       // This message will only appear if both DB connection and server listening are successful
-//       console.log(`Server is running and connected to MongoDB '${DB_NAME}' on port ${PORT}`);
-//     });
-//   } catch (error) {
-//     console.error("Failed to start server:", error);
-//     process.exit(1); // Exit if server cannot start
-//   }
-// }
-
-// startServer(); // Call the function to start the server
-
-// module.exports = app;
 
 const express = require('express');
 const cors = require('cors');
+const session = require('express-session'); // Add this line
 const bodyParser = require('body-parser');
-const { connectToDb } = require('./Db/Db'); // Import connectToDb
-const { PORT, DB_NAME } = require('./Config/Config'); // Import PORT and DB_NAME from config
-const assetsRoutes = require('./Routes/assets.route'); // Import assets routes
+const { connectToDb } = require('./Db/Db');
+const { PORT, DB_NAME, SESSION_SECRET } = require('./Config/Config');
+const assetsRoutes = require('./Routes/assets.route');
+ // Make sure you have this
 
 const app = express();
 
-// Middleware Setup
-// Order matters for middleware!
-app.use(cors({
-  origin: 'http://localhost:3000', // Allow only your frontend origin
-  credentials: true                // Allow cookies and credentials
+// Session Configuration (Add this before other middleware)
+app.use(session({
+  secret: SESSION_SECRET || 'your-secret-key-here', // Should be in your config
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production', // Enable in production with HTTPS
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
 }));
-app.use(express.json({ limit: '50mb' })); // Parse JSON bodies with a larger limit
-app.use(express.urlencoded({ limit: '50mb', extended: true })); // Parse URL-encoded bodies
 
-// Custom middleware for logging content length (optional, for debugging)
+// Middleware Setup
+app.use(cors({
+  origin: 'http://localhost:3000',
+  credentials: true
+}));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Custom middleware for logging
 app.use((req, res, next) => {
-  console.log('Request content length:', req.headers['content-length']);
+  console.log('Incoming request:', {
+    method: req.method,
+    path: req.path,
+    session: req.session ? 'exists' : 'undefined' // Debug session
+  });
   next();
 });
+
+// Routes
+app.use('/', assetsRoutes);
+app.use('/users', assetsRoutes); // Make sure user routes are included
 
 // Root route
 app.get('/', (req, res) => {
   res.send("Hey! The Nic is running.");
 });
 
-// Routes
-app.use('/', assetsRoutes); // Mount assets routes
+// Error handling middleware (add at the end)
+app.use((err, req, res, next) => {
+  console.error('Server error:', err);
+  res.status(500).json({ error: 'Internal server error' });
+});
 
-// Function to start the server
 async function startServer() {
   try {
-    await connectToDb(); // Connect to the database
-
-    // Listen for incoming requests
+    await connectToDb();
     app.listen(PORT, () => {
-      // This message will only appear if both DB connection and server listening are successful
       console.log(`Server is running and connected to MongoDB '${DB_NAME}' on port ${PORT}`);
     });
   } catch (error) {
     console.error("Failed to start server:", error);
-    process.exit(1); // Exit if server cannot start
+    process.exit(1);
   }
 }
 
-startServer(); // Call the function to start the server
+startServer();
 
 module.exports = app;

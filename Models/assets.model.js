@@ -105,10 +105,11 @@ const DigitalAssetsModel = {
       assetsId: data.assetsId,
       BP: {
         name: data.BP.name,
-        prismId: data.BP.prismid,
+        prismId: data.BP.prismId,
         deptName: data.BP.deptname,
         url: data.BP.url,
         publicIp: data.BP.public_ip,
+        HOD: data.BP.HOD,
         nodalOfficerNIC: {
           name: data.BP.nodalofficerNIC.Name,
           empCode: data.BP.nodalofficerNIC.Emp_code,
@@ -210,6 +211,31 @@ const DigitalAssetsModel = {
       .collection("Assets")
       .updateOne({ assetsId }, { $set: { TS: newTS } });
   },
+
+  async getDashboardAllProjectBySIO() {
+  const db = getDb();
+  
+  return await db.collection("Assets").aggregate([
+    {
+      $project: {
+        _id: 0,
+        prismId: "$BP.prismId",
+        HOD: "$BP.HOD",
+        deptName: "$BP.deptName",
+        audits: {
+          $map: {
+            input: "$SA.securityAudit",
+            as: "audit",
+            in: {
+              auditDate: "$$audit.auditDate",
+              expireDate: "$$audit.expireDate"
+            }
+          }
+        }
+      }
+    }
+  ]).toArray();
+}
 };
 
 module.exports = DigitalAssetsModel;

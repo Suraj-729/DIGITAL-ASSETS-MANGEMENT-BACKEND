@@ -18,13 +18,18 @@ router.get('/assets/by-department/:deptName', AssetsController.getAssetsByDepart
 // router.get('/assets/all-projects', AssetsController.getAllProjects);
 
 // User routes
-router.post('/users', UserController.createUser);
-router.get('/users/:assetsId', UserController.getUserById);
-router.put('/users/:assetsId/password', UserController.updatePassword);
-router.delete('/users/:assetsId', UserController.deleteUser);
+// User routes
+// router.post('/users', UserController.createUser);
+// router.get('/users/verify-email', UserController.verifyEmail);
+// router.get('/users/:email', UserController.getUserByEmail);
+// router.put('/users/:email/password', UserController.updatePassword);
+// router.delete('/users/:email', UserController.deleteUser);
 router.post('/users/login', UserController.login);
 router.post('/users/logout', UserController.logout);
-
+router.post('/users/register', UserController.register);
+router.get('/dashboard/dataSio',AssetsController.getDashboardAllProjectBySIO);
+// router.post('/users/request-password-reset', UserController.requestPasswordReset);
+// router.post('/users/reset-password', UserController.resetPassword);
 module.exports = router;
 
 
