@@ -1,54 +1,6 @@
 const AssetsModel = require("../Models/assets.model");
 const { getDb } = require("../Db/Db");
 
-
-
-// async function createAsset(req, res) {
-//   try {
-//     // Log full request body for debugging
-//     console.log("Received full request body:", req.body.BP);
-
-//     // Parse each section if present
-//     let bpData = req.body.BP;
-//     let SA = req.body.SA; // <-- Use SA for consistency
-//     const TS = req.body.TS;
-//     const Infra = req.body.Infra ;
-
-//     // Log each section for clarity
-//     if (bpData) console.log("Parsed Basic Profile (BP):", JSON.stringify(bpData, null, 2));
-//     if (SA) console.log("Parsed Security Audit (SA):", JSON.stringify(SA, null, 2));
-//     if (TS) console.log("Parsed Technical Stack (TS):", JSON.stringify(TS, null, 2));
-//     if (Infra) console.log("Parsed Infra:", JSON.stringify(Infra, null, 2));
-
-//     // Log file if uploaded
-//     if (req.file) {
-//       console.log("Certificate file uploaded:", req.file.originalname);
-//     } else {
-//       console.log("No certificate file uploaded.");
-//     }
-
-//     // Check for required sections
-//     if (!bpData || !SA || !TS || !Infra) {
-//       return res.status(400).json({ error: "Missing required asset sections (BP, SA, TS, Infra)" });
-//     }
-
-//     // Example: Save to DB (adjust according to your model)
-//     const assetId = await AssetsModel.createAsset({
-//       BP: bpData,
-//       SA,
-//       TS,
-//       Infra,
-//       certificate: req.file || null,
-//     });
-
-//     return res.status(201).json({ message: "Asset created", assetId });
-
-//   } catch (err) {
-//     console.error("Error in createAsset:", err);
-//     return res.status(500).json({ error: "Error creating asset", details: err.message });
-//   }
-// }
-
 async function createAsset(req, res) {
   try {
   const BP = JSON.parse(req.body.BP);
@@ -61,6 +13,7 @@ async function createAsset(req, res) {
   }
 
   const assetId = await AssetsModel.createAsset({
+    // assetId,
     BP,
     SA,
     TS,
@@ -396,33 +349,157 @@ async function getDashboardAllProjectBySIO(req, res) {
   }
 }
 
-// async function getAssetByProjectName(req, res) {
-//   try {
-//     const db = getDb();
-//     const projectName = req.params.projectName;
 
-//     const asset = await db.collection("Assets").findOne({
-//       "BP.name": { $regex: new RegExp(`^${projectName}$`, "i") }, // case-insensitive match
-//     });
+async function getProjectDetailsByName(req, res) {
+  try {
+    const db = getDb();
+    const { projectName } = req.params;
 
-//     if (!asset) {
-//       return res
-//         .status(404)
-//         .json({ error: `No asset found with project name '${projectName}'` });
-//     }
+    if (!projectName) {
+      return res.status(400).json({ error: "Project name is required" });
+    }
 
-//     // Restructure the asset so that projectName appears after assetsId
-//     const modifiedAsset = {
-//       assetsId: asset.assetsId,
-//       projectName: asset.BP.name,
-//       BP: asset.BP,
-//       SA: asset.SA,
-//       Infra: asset.Infra,
-//       TS: asset.TS,
-//     };
+    const project = await db.collection("Assets").findOne(
+      { "BP.name": { $regex: new RegExp(`^${projectName}$`, "i") } },
+      {
+        projection: {
+          _id: 0,
+          assetsId: 1,
+          BP: 1,
+          SA: 1,
+          Infra: 1,
+          TS: 1,
+          createdAt: 1
+        }
+      }
+    );
 
-//     res.status(200).json(modifiedAsset);
-//   } catch
+    if (!project) {
+      return res.status(404).json({ error: "Project not found" });
+    }
+
+    // Format the response to match your document structure
+    const response = {
+      assetsId: project.assetsId,
+      projectName: project.BP.name,
+      BP: {
+        prismId: project.BP.prismId,
+        deptName: project.BP.deptName,
+        url: project.BP.url,
+        publicIp: project.BP.publicIp,
+        HOD: project.BP.HOD,
+        nodalOfficerNIC: project.BP.nodalOfficerNIC || null,
+        nodalOfficerDept: project.BP.nodalOfficerDept || null
+      },
+      SA: {
+        securityAudit: project.SA.securityAudit || []
+      },
+      Infra: {
+        typeOfServer: project.Infra.typeOfServer || null,
+        location: project.Infra.location || null,
+        deployment: project.Infra.deployment || null,
+        dataCentre: project.Infra.dataCentre || null,
+        gitUrls: project.Infra.gitUrls || [],
+        vaRecords: project.Infra.vaRecords || [],
+        additionalInfra: project.Infra.additionalInfra || []
+      },
+      TS: {
+        frontend: project.TS.frontend || [],
+        framework: project.TS.framework || null,
+        database: project.TS.database || [],
+        os: project.TS.os || [],
+        osVersion: project.TS.osVersion || [],
+        repoUrls: project.TS.repoUrls || []
+      },
+      createdAt: project.createdAt
+    };
+
+    res.status(200).json(response);
+  } catch (error) {
+    console.error("Error in getProjectDetailsByName:", error);
+    res.status(500).json({ 
+      error: "Failed to fetch project details",
+      details: error.message 
+    });
+  }
+}
+
+// async function 
+
+
+
+ async function getDashboardByType(req, res) {
+  try {
+    const db = getDb();
+    const employeeId = req.params.employeeId || (req.user && req.user.employeeId);
+    const employeeType = req.query.employeeType || (req.user && req.user.employeeType);
+    const name = req.query.name || (req.user && req.user.name);
+
+    if (!employeeId || !employeeType) {
+      return res.status(400).json({ error: "employeeId and employeeType are required" });
+    }
+
+    let matchStage = {};
+
+    if (employeeType === "Admin" && /^ADMINNIC-\d+$/.test(employeeId)) {
+      matchStage = {};
+    } else if (employeeType === "HOD" && /^HODNIC-\d+$/.test(employeeId)) {
+      matchStage = { "BP.employeeId": employeeId };
+    } else if (employeeType === "ProjectManager" && /^PMNIC-\d+$/.test(employeeId)) {
+      matchStage = { "BP.employeeId": employeeId };
+    } else {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    const pipeline = [
+      { $match: matchStage },
+      {
+        $project: {
+          _id: 0,
+          assetsId: 1,
+          projectName: "$BP.name",
+          prismId: "$BP.prismId",
+          deptName: "$BP.deptName",
+          HOD: "$BP.HOD",
+          employeeId: "$BP.employeeId",
+          securityAudits: "$SA.securityAudit",
+          dataCentre: "$Infra.dataCentre",
+          createdAt: 1
+        }
+      },
+      { $unwind: { path: "$securityAudits", preserveNullAndEmptyArrays: true } },
+      {
+        $project: {
+          assetsId: 1,
+          projectName: 1,
+          prismId: 1,
+          deptName: 1,
+          HOD: 1,
+          employeeId: 1,
+          auditDate: "$securityAudits.auditDate",
+          expireDate: "$securityAudits.expireDate",
+          tlsNextExpiry: "$securityAudits.tlsNextExpiry",
+          sslLabScore: "$securityAudits.sslLabScore",
+          certificate: "$securityAudits.certificate",
+          dataCentre: 1,
+          createdAt: 1
+        }
+      },
+      { $sort: { expireDate: 1 } }
+    ];
+
+    const dashboardData = await db.collection("Assets").aggregate(pipeline).toArray();
+
+    if (!dashboardData.length) {
+      return res.status(404).json({ error: "No assets found for your role" });
+    }
+
+    res.status(200).json(dashboardData);
+  } catch (err) {
+    console.error("Error in getDashboardByType:", err);
+    res.status(500).json({ error: "Failed to fetch dashboard data", details: err.message });
+  }
+}
 
 
 
@@ -436,7 +513,9 @@ module.exports = {
   updateTS,
   getAssetsByDataCentre,
   getAssetsByDepartment,
-  getDashboardAllProjectBySIO
+  getDashboardAllProjectBySIO,
+  getProjectDetailsByName,
+  getDashboardByType
   // getAssetByProjectName, // Make sure this exists!
   // getAllProjects         // Make sure this exists!
 };

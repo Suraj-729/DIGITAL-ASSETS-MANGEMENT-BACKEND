@@ -28,6 +28,8 @@ router.post('/users/login', UserController.login);
 router.post('/users/logout', UserController.logout);
 router.post('/users/register', UserController.register);
 router.get('/dashboard/dataSio',AssetsController.getDashboardAllProjectBySIO);
+router.get('/dashboard/projectDetails/:projectName', AssetsController.getProjectDetailsByName);
+router.get('/dashboard/by-type/:employeeId', AssetsController.getDashboardByType);
 // router.post('/users/request-password-reset', UserController.requestPasswordReset);
 // router.post('/users/reset-password', UserController.resetPassword);
 module.exports = router;

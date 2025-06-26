@@ -78,28 +78,67 @@ async function deleteUser(req, res) {
 // }
 
 
+// async function login(req, res) {
+//   try {
+//     const { userId, password } = req.body;
+//     console.log('Login request received for userId:', userId);
+    
+//     if (!userId || !password) {
+//       console.log('Missing credentials');
+//       return res.status(400).json({ error: "UserId and password are required" });
+//     }
+
+//     const user = await UserModel.findByLogin(userId, password);
+    
+//     if (!user) {
+//       console.log('Invalid login attempt for userId:', userId);
+//       return res.status(401).json({ error: "Invalid credentials" });
+//     }
+
+//     console.log('User authenticated successfully:', userId);
+//     req.session.user = { userId: user.userId };
+//     res.status(200).json({ 
+//       message: "Login successful",
+//       user: { userId: user.userId }
+//     });
+//   } catch (err) {
+//     console.error('Login error:', {
+//       message: err.message,
+//       stack: err.stack,
+//       requestBody: req.body
+//     });
+//     res.status(500).json({ 
+//       error: "Login failed",
+//       details: process.env.NODE_ENV === 'development' ? err.message : undefined
+//     });
+//   }
+// }
 async function login(req, res) {
   try {
-    const { userId, password } = req.body;
-    console.log('Login request received for userId:', userId);
-    
-    if (!userId || !password) {
+    const { loginId, password } = req.body; // Accept loginId (can be userId or employeeId)
+    console.log('Login request received for loginId:', loginId);
+
+    if (!loginId || !password) {
       console.log('Missing credentials');
-      return res.status(400).json({ error: "UserId and password are required" });
+      return res.status(400).json({ error: "Login ID and password are required" });
     }
 
-    const user = await UserModel.findByLogin(userId, password);
-    
+    const user = await UserModel.findByLogin(loginId, password);
+
     if (!user) {
-      console.log('Invalid login attempt for userId:', userId);
+      console.log('Invalid login attempt for loginId:', loginId);
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    console.log('User authenticated successfully:', userId);
-    req.session.user = { userId: user.userId };
+    console.log('User authenticated successfully:', loginId);
+    req.session.user = { userId: user.userId, employeeId: user.employeeId, employeeType: user.employeeType };
     res.status(200).json({ 
       message: "Login successful",
-      user: { userId: user.userId }
+      user: { 
+        userId: user.userId,
+        employeeId: user.employeeId,
+        employeeType: user.employeeType
+      }
     });
   } catch (err) {
     console.error('Login error:', {
@@ -127,15 +166,54 @@ async function logout(req, res) {
   }
 }
 
+// async function register(req, res) {
+//   try {
+//     const { userId, password } = req.body;
+//     console.log('Registration request for:', userId);
+
+//     // Validate input
+//     if (!userId || !password) {
+//       console.log('Missing registration fields');
+//       return res.status(400).json({ error: "UserId and password are required" });
+//     }
+
+//     // Check if user already exists
+//     const existingUser = await UserModel.getUserById(userId);
+//     if (existingUser) {
+//       console.log('User already exists:', userId);
+//       return res.status(409).json({ error: "User already exists" });
+//     }
+
+//     // Create new user
+//     const newUserId = await UserModel.createUser({ userId, password });
+//     console.log('New user created:', newUserId);
+
+//     res.status(201).json({ 
+//       message: "Registration successful",
+//       userId
+//     });
+//   } catch (err) {
+//     console.error('Registration error:', {
+//       message: err.message,
+//       stack: err.stack,
+//       requestBody: req.body
+//     });
+//     res.status(500).json({ 
+//       error: "Registration failed",
+//       details: process.env.NODE_ENV === 'development' ? err.message : undefined
+//     });
+//   }
+// }
+
 async function register(req, res) {
   try {
-    const { userId, password } = req.body;
-    console.log('Registration request for:', userId);
+    const { userId, password, employeeId, employeeType } = req.body;
+    console.log('Registration request for:', userId, 'Employee ID:', employeeId, 'Employee Type:', employeeType);
 
     // Validate input
-    if (!userId || !password) {
+    if (!userId || !password || !employeeId || !employeeType) {
       console.log('Missing registration fields');
-      return res.status(400).json({ error: "UserId and password are required" });
+      return res.status(400).json({ error: "UserId, password, employeeId, and employeeType are required" });
     }
 
     // Check if user already exists
@@ -146,12 +224,14 @@ async function register(req, res) {
     }
 
     // Create new user
-    const newUserId = await UserModel.createUser({ userId, password });
+    const newUserId = await UserModel.createUser({ userId, password, employeeId, employeeType });
     console.log('New user created:', newUserId);
 
     res.status(201).json({ 
       message: "Registration successful",
-      userId
+      userId,
+      employeeId,
+      employeeType
     });
   } catch (err) {
     console.error('Registration error:', {
