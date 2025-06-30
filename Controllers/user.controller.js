@@ -246,6 +246,27 @@ async function register(req, res) {
   }
 }
 
+async function changePassword(req, res) {
+  try {
+    const { loginId, currentPassword, newPassword } = req.body;
+    if (!loginId || !currentPassword || !newPassword) {
+      return res.status(400).json({ error: "loginId, currentPassword, and newPassword are required" });
+    }
+
+    const user = await UserModel.findByLogin(loginId, currentPassword);
+    if (!user) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    await UserModel.updatePasswordByLoginId(loginId, newPassword);
+    res.status(200).json({ message: "Password changed successfully" });
+  } catch (err) {
+    console.error('Change password error:', err);
+    res.status(500).json({ error: "Failed to change password", details: err.message });
+  }
+}
+
+
 
 module.exports = {
   createUser,
@@ -254,5 +275,6 @@ module.exports = {
   deleteUser,
   login,
   logout,
-  register
+  register,
+  changePassword
 };

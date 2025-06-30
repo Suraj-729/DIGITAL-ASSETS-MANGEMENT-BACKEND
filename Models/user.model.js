@@ -74,8 +74,18 @@ async findByLogin(identifier, password) {
   console.log('Creating new user:', userProfile.userId, userProfile.employeeId, userProfile.employeeType);
   const result = await db.collection("Users").insertOne(userProfile);
   return result.insertedId;
-}
-,
+},
+
+async updatePasswordByLoginId(identifier, newPassword) {
+  const db = getDb();
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+  return await db.collection("Users").updateOne(
+    { $or: [{ userId: identifier }, { employeeId: identifier }] },
+    { $set: { password: hashedPassword } }
+  );
+},
+
+
 };
 
 module.exports = UserModel;

@@ -30,6 +30,7 @@ router.post('/users/register', UserController.register);
 router.get('/dashboard/dataSio',AssetsController.getDashboardAllProjectBySIO);
 router.get('/dashboard/projectDetails/:projectName', AssetsController.getProjectDetailsByName);
 router.get('/dashboard/by-type/:employeeId', AssetsController.getDashboardByType);
+router.put('/users/change-password', UserController.changePassword);
 // router.post('/users/request-password-reset', UserController.requestPasswordReset);
 // router.post('/users/reset-password', UserController.resetPassword);
 module.exports = router;

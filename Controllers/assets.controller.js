@@ -481,6 +481,8 @@ async function getProjectDetailsByName(req, res) {
           tlsNextExpiry: "$securityAudits.tlsNextExpiry",
           sslLabScore: "$securityAudits.sslLabScore",
           certificate: "$securityAudits.certificate",
+          auditStatus: "$securityAudits.auditStatus",   // <-- Add this line
+          sslStatus: "$securityAudits.sslStatus",       // <-- Add this line
           dataCentre: 1,
           createdAt: 1
         }
@@ -500,6 +502,8 @@ async function getProjectDetailsByName(req, res) {
     res.status(500).json({ error: "Failed to fetch dashboard data", details: err.message });
   }
 }
+
+
 
 
 
