@@ -31,6 +31,7 @@ router.get('/dashboard/dataSio',AssetsController.getDashboardAllProjectBySIO);
 router.get('/dashboard/projectDetails/:projectName', AssetsController.getProjectDetailsByName);
 router.get('/dashboard/by-type/:employeeId', AssetsController.getDashboardByType);
 router.put('/users/change-password', UserController.changePassword);
+router.put('/assets/update/by-project-name/:projectName', upload.single('certificate'), AssetsController.updateAssetByProjectName);
 // router.post('/users/request-password-reset', UserController.requestPasswordReset);
 // router.post('/users/reset-password', UserController.resetPassword);
 module.exports = router;

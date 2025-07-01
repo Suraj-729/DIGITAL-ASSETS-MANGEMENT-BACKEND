@@ -503,6 +503,46 @@ async function getProjectDetailsByName(req, res) {
   }
 }
 
+async function updateAssetByProjectName(req, res) {
+  try {
+    const { projectName } = req.params;
+    if (!projectName) {
+      return res.status(400).json({ error: "Project name is required" });
+    }
+
+    const BP = JSON.parse(req.body.BP);
+    const SA = JSON.parse(req.body.SA);
+    const TS = JSON.parse(req.body.TS);
+    const Infra = JSON.parse(req.body.Infra);
+
+    if (req.file) {
+      SA.certificate = req.file.originalname;
+    }
+
+    const db = getDb();
+    const result = await db.collection("Assets").updateOne(
+      { "BP.name": { $regex: new RegExp(`^${projectName}$`, "i") } },
+      {
+        $set: {
+          BP,
+          SA,
+          TS,
+          Infra,
+          certificate: req.file || null,
+        }
+      }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: "Asset not found for this project name" });
+    }
+
+    res.status(200).json({ message: "Asset updated successfully", modifiedCount: result.modifiedCount });
+  } catch (err) {
+    console.error("Error in updateAssetByProjectName:", err);
+    res.status(500).json({ error: "Error updating asset", details: err.message });
+  }
+}
 
 
 
@@ -519,7 +559,8 @@ module.exports = {
   getAssetsByDepartment,
   getDashboardAllProjectBySIO,
   getProjectDetailsByName,
-  getDashboardByType
+  getDashboardByType,
+  updateAssetByProjectName
   // getAssetByProjectName, // Make sure this exists!
   // getAllProjects         // Make sure this exists!
 };
