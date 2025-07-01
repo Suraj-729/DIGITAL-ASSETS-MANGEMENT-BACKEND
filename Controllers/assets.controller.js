@@ -1,5 +1,8 @@
 const AssetsModel = require("../Models/assets.model");
 const { getDb } = require("../Db/Db");
+const moment = require("moment");
+const { ObjectId } = require("mongodb");
+
 
 async function createAsset(req, res) {
   try {
@@ -502,6 +505,214 @@ async function getProjectDetailsByName(req, res) {
 }
 
 
+// GET notifications about expiring certificates
+async function getExpiringCertNotifications(req, res) {
+  const db = getDb();
+  const today = new Date();
+  const WARNING_DAYS = 30;
+
+  try {
+    const notifications = [];
+
+    const assets = await db.collection("Assets").find({}).toArray();
+
+    for (const asset of assets) {
+      const empId = asset?.BP?.employeeId;
+      if (!empId) continue;
+
+      const user = await db.collection("Users").findOne({ employeeId: empId });
+      if (!user || !user.userId) continue;
+
+      for (const audit of asset?.SA?.securityAudit || []) {
+        const expiry = audit.tlsNextExpiry || audit.expireDate;
+        if (!expiry) continue;
+
+        const daysLeft = moment(expiry).diff(moment(today), "days");
+        if (daysLeft <= WARNING_DAYS && daysLeft >= 0) {
+          notifications.push({
+            assetName: asset.BP.name,
+            projectName: asset.BP.name, // 👈 used by frontend
+            prismId: asset.BP.prismId,
+            employeeId: empId,
+            daysLeft,
+            expireDate: moment(expiry).format("DD-MMM-YYYY"),
+            message: `SSL/TLS certificate will expire on ${moment(expiry).format("DD-MMM-YYYY")}`,
+          });
+        }
+      }
+    }
+
+    res.status(200).json({ notifications });
+  } catch (err) {
+    console.error("Notification Fetch Error:", err);
+    res.status(500).json({ error: "Failed to fetch notifications" });
+  }
+}
+// async function getExpiringCertNotifications(req, res) {
+//   const db = getDb();
+//   const today = new Date();
+//   const WARNING_DAYS = 30;
+
+//   try {
+//     const assets = await db.collection("Assets").find({}).toArray();
+
+//     for (const asset of assets) {
+//       const empId = asset?.BP?.employeeId;
+//       if (!empId) continue;
+
+//       const user = await db.collection("Users").findOne({ employeeId: empId });
+//       if (!user || !user.userId) continue;
+
+//       for (const audit of asset?.SA?.securityAudit || []) {
+//         const expiry = audit.tlsNextExpiry || audit.expireDate;
+//         if (!expiry) continue;
+
+//         const daysLeft = moment(expiry).diff(moment(today), "days");
+//         if (daysLeft <= WARNING_DAYS && daysLeft >= 0) {
+//           const expireDateStr = moment(expiry).format("DD-MMM-YYYY");
+
+//           // Check if same notification already exists
+//           const existing = (user.notifications || []).some(n =>
+//             n.assetName === asset.BP.name &&
+//             n.expireDate === expireDateStr &&
+//             !n.read
+//           );
+//           if (existing) continue;
+
+//           // Create notification object
+//           const notification = {
+//             _id: new ObjectId(),
+//             assetName: asset.BP.name,
+//             projectName: asset.BP.name,
+//             prismId: asset.BP.prismId,
+//             employeeId: empId,
+//             read: false,
+//             type: daysLeft <= 7 ? "critical" : "warning", // or use your own logic
+//             createdAt: new Date(),
+//             expireDate: expireDateStr,
+//             message: `SSL/TLS certificate will expire on ${expireDateStr}`,
+//           };
+
+//           // Push to user.notifications
+//           await db.collection("Users").updateOne(
+//             { employeeId: empId },
+//             { $push: { notifications: notification } }
+//           );
+//         }
+//       }
+//     }
+
+//     res.status(200).json({ message: "Expiry notifications synced to user accounts" });
+//   } catch (err) {
+//     console.error("Notification Fetch Error:", err);
+//     res.status(500).json({ error: "Failed to fetch notifications" });
+//   }
+// }
+
+
+async function getExpiringCertsByEmployeeId(req, res) {
+  try {
+    const db = getDb();
+    const { employeeId } = req.params;
+    const WARNING_DAYS = 30;
+    const today = new Date();
+
+    const assets = await db
+      .collection("Assets")
+      .find({ "BP.nodalOfficerNIC.empCode": employeeId })
+      .toArray();
+
+    const expiring = [];
+
+    assets.forEach((asset) => {
+      (asset.SA?.securityAudit || []).forEach((audit) => {
+        const expiry = audit.tlsNextExpiry || audit.expireDate;
+        if (!expiry) return;
+        const daysLeft = moment(expiry).diff(moment(today), "days");
+        if (daysLeft <= WARNING_DAYS && daysLeft >= 0) {
+          expiring.push({
+            assetsId: asset.assetsId,
+            projectName: asset.BP.name,
+            prismId: asset.BP.prismId,
+            expiry,
+            daysLeft
+          });
+        }
+      });
+    });
+
+    res.json({ employeeId, total: expiring.length, expiring });
+  } catch (err) {
+    console.error("getExpiringCertsByEmployeeId:", err);
+    res.status(500).json({ error: "Failed to fetch expiry data", details: err.message });
+  }
+}
+
+// GET newest unread (limit 5)
+// async function getLatestNotifications(req, res) {
+//   const db = getDb();
+//   const { employeeId } = req.session.user;        // from login session
+
+//   const user = await db
+//     .collection("Users")
+//     .findOne({ employeeId }, { projection: { notifications: 1 } });
+
+//   const latest = (user?.notifications || [])
+//     .filter(n => !n.read)
+//     .sort((a, b) => b.createdAt - a.createdAt)
+//     .slice(0, 5);
+
+//   res.json(latest);
+// }
+async function getLatestNotifications(req, res) {
+  const sessionUser = req.session.user;
+  if (!sessionUser || !sessionUser.employeeId) {
+    return res.status(401).json({ error: "Unauthorized. Please login." });
+  }
+
+  const db = getDb();
+  const { employeeId } = sessionUser;
+
+  const user = await db.collection("Users").findOne(
+    { employeeId },
+    { projection: { notifications: 1 } }
+  );
+
+  const latest = (user?.notifications || [])
+    .filter(n => !n.read)
+    .sort((a, b) => b.createdAt - a.createdAt)
+    .slice(0, 5);
+
+  res.json(latest);
+}
+
+
+
+// GET all notifications
+async function getAllNotifications(req, res) {
+  const db = getDb();
+  const { employeeId } = req.session.user;
+
+  const user = await db
+    .collection("Users")
+    .findOne({ employeeId }, { projection: { notifications: 1 } });
+
+  res.json(user?.notifications || []);
+}
+
+// POST mark one as read
+async function markNotificationRead(req, res) {
+  const db = getDb();
+  const { employeeId } = req.session.user;
+  const { id } = req.params;                 // notification _id
+
+  await db.collection("Users").updateOne(
+    { employeeId, "notifications._id": ObjectId(id) },
+    { $set: { "notifications.$.read": true } }
+  );
+  res.json({ ok: true });
+}
+
 
 module.exports = {
   createAsset,
@@ -515,7 +726,12 @@ module.exports = {
   getAssetsByDepartment,
   getDashboardAllProjectBySIO,
   getProjectDetailsByName,
-  getDashboardByType
+  getDashboardByType,
+  getExpiringCertNotifications,
+  markNotificationRead,
+  getLatestNotifications,
+  getAllNotifications,
+  getExpiringCertsByEmployeeId,
   // getAssetByProjectName, // Make sure this exists!
   // getAllProjects         // Make sure this exists!
 };
