@@ -1,6 +1,6 @@
 const AssetsModel = require("../Models/assets.model");
 const { getDb } = require("../Db/Db");
-
+const moment = require("moment")
 async function createAsset(req, res) {
   try {
   const BP = JSON.parse(req.body.BP);
@@ -544,6 +544,51 @@ async function updateAssetByProjectName(req, res) {
   }
 }
 
+async function getExpiringCertNotifications(req, res) {
+  const db = getDb();
+  const today = new Date();
+  const WARNING_DAYS = 30;
+
+  try {
+    const notifications = [];
+
+    const assets = await db.collection("Assets").find({}).toArray();
+
+    for (const asset of assets) {
+      const empId = asset?.BP?.employeeId;
+      if (!empId) continue;
+
+      const user = await db.collection("Users").findOne({ employeeId: empId });
+      if (!user || !user.userId) continue;
+
+      for (const audit of asset?.SA?.securityAudit || []) {
+        const expiry = audit.tlsNextExpiry || audit.expireDate;
+        if (!expiry) continue;
+
+        const daysLeft = moment(expiry).diff(moment(today), "days");
+        if (daysLeft <= WARNING_DAYS && daysLeft >= 0) {
+          notifications.push({
+            assetName: asset.BP.name,
+            projectName: asset.BP.name, // 👈 used by frontend
+            prismId: asset.BP.prismId,
+            employeeId: empId,
+            daysLeft,
+            expireDate: moment(expiry).format("DD-MMM-YYYY"),
+            message: `SSL/TLS certificate will expire on ${moment(expiry).format("DD-MMM-YYYY")}`,
+          });
+        }
+      }
+    }
+
+    res.status(200).json({ notifications });
+  } catch (err) {
+    console.error("Notification Fetch Error:", err);
+    res.status(500).json({ error: "Failed to fetch notifications" });
+  }
+}
+
+
+
 
 
 
@@ -560,7 +605,8 @@ module.exports = {
   getDashboardAllProjectBySIO,
   getProjectDetailsByName,
   getDashboardByType,
-  updateAssetByProjectName
+  updateAssetByProjectName,
+  getExpiringCertNotifications
   // getAssetByProjectName, // Make sure this exists!
   // getAllProjects         // Make sure this exists!
 };

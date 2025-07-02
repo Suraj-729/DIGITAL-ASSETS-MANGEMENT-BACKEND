@@ -14,6 +14,7 @@ router.put('/assets/update/infra/:assetsId', AssetsController.updateInfra);
 router.put('/assets/update/ts/:assetsId', AssetsController.updateTS);
 router.get('/assets/datacentre/:dataCentre', AssetsController.getAssetsByDataCentre);
 router.get('/assets/by-department/:deptName', AssetsController.getAssetsByDepartment);
+router.get('/notifications/expiring-certificates', AssetsController.getExpiringCertNotifications);
 // router.get('/assets/project/:projectName', AssetsController.getAssetByProjectName);
 // router.get('/assets/all-projects', AssetsController.getAllProjects);
 
