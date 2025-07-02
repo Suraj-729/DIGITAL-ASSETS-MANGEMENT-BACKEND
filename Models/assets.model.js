@@ -2,8 +2,6 @@ const { getDb } = require("../Db/Db");
 const { ObjectId } = require("mongodb");
 
 const DigitalAssetsModel = {
-
-
   // async generateNextNICId() {
   //   try {
   //     // Find the highest existing NIC ID with projection and sort
@@ -91,6 +89,9 @@ const DigitalAssetsModel = {
             : null,
           sslLabScore: record.sslLabScore,
           certificate: record.certificate,
+          // Add these lines:
+          auditStatus: record.auditStatus || "Completed", // or your logic
+          sslStatus: record.sslStatus || "Valid", // or your logic
         })),
       },
       Infra: {
@@ -195,10 +196,6 @@ const DigitalAssetsModel = {
       ])
       .toArray();
   },
-
-  
-
-
 };
 
 module.exports = DigitalAssetsModel;
