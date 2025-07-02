@@ -8,6 +8,8 @@ const bodyParser = require('body-parser');
 const { connectToDb } = require('./Db/Db');
 const { PORT, DB_NAME, SESSION_SECRET } = require('./Config/Config');
 const assetsRoutes = require('./Routes/assets.route');
+const cron = require("node-cron");
+const notifyUsersAboutExpiringCerts = require("./utils/checkAndNotifyExpiringCerts");
  // Make sure you have this
 
 const app = express();
@@ -18,7 +20,8 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: process.env.NODE_ENV === 'production', // Enable in production with HTTPS
+    // secure: process.env.NODE_ENV === 'production', // Enable in production with HTTPS
+    secure: false, // Set to true if using HTTPS in production
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
   }
@@ -68,6 +71,15 @@ async function startServer() {
     process.exit(1);
   }
 }
+cron.schedule("0 9 * * *", async () => {
+  console.log("🔔 Running scheduled SSL/TLS expiry check...");
+  try {
+    await notifyUsersAboutExpiringCerts();
+    console.log("✅ Notification job completed");
+  } catch (err) {
+    console.error("❌ Notification job failed:", err);
+  }
+});
 
 startServer();
 
