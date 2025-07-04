@@ -3,7 +3,8 @@ const router = express.Router();
 
 const AssetsController = require('../Controllers/assets.controller');
 const UserController = require('../Controllers/user.controller'); // Add this line
-const upload = require('../middlewares/upload')
+const upload = require('../middlewares/upload');
+
 // router.post('/assets/createAsset', AssetsController.createAsset);
 router.post('/assets/createAsset', upload.single('certificate'), AssetsController.createAsset);
 router.get('/assets/:assetsId', AssetsController.getAsset);
@@ -14,7 +15,12 @@ router.put('/assets/update/infra/:assetsId', AssetsController.updateInfra);
 router.put('/assets/update/ts/:assetsId', AssetsController.updateTS);
 router.get('/assets/datacentre/:dataCentre', AssetsController.getAssetsByDataCentre);
 router.get('/assets/by-department/:deptName', AssetsController.getAssetsByDepartment);
+router.get('/dashboard/expiring/:employeeId', AssetsController.getExpiringCertsByEmployeeId);
 router.get('/notifications/expiring-certificates', AssetsController.getExpiringCertNotifications);
+router.get("/notifications/latest",AssetsController.getLatestNotifications);
+router.get("/notifications/all",AssetsController.getAllNotifications);
+router.post("/notifications/:id/read",AssetsController.markNotificationRead);
+
 // router.get('/assets/project/:projectName', AssetsController.getAssetByProjectName);
 // router.get('/assets/all-projects', AssetsController.getAllProjects);
 

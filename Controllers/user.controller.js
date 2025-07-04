@@ -55,64 +55,6 @@ async function deleteUser(req, res) {
   }
 }
 
-// Login user
-// async function login(req, res) {
-//   try {
-//     const { assetsId, password } = req.body;
-//     console.log('Login payload:', req.body);
-
-//     const user = await UserModel.findByLogin(assetsId, password);
-//     console.log('User found:', user);
-
-//     if (!user) {
-//       console.log('No user found with provided credentials');
-//       return res.status(401).json({ error: "Invalid credentials" });
-//     }
-//     req.session = req.session || {};
-//     req.session.user = { assetsId: user.assetsId };
-//     res.status(200).json({ message: "Login successful" });
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ error: "Login failed", details: err.message });
-//   }
-// }
-
-
-// async function login(req, res) {
-//   try {
-//     const { userId, password } = req.body;
-//     console.log('Login request received for userId:', userId);
-    
-//     if (!userId || !password) {
-//       console.log('Missing credentials');
-//       return res.status(400).json({ error: "UserId and password are required" });
-//     }
-
-//     const user = await UserModel.findByLogin(userId, password);
-    
-//     if (!user) {
-//       console.log('Invalid login attempt for userId:', userId);
-//       return res.status(401).json({ error: "Invalid credentials" });
-//     }
-
-//     console.log('User authenticated successfully:', userId);
-//     req.session.user = { userId: user.userId };
-//     res.status(200).json({ 
-//       message: "Login successful",
-//       user: { userId: user.userId }
-//     });
-//   } catch (err) {
-//     console.error('Login error:', {
-//       message: err.message,
-//       stack: err.stack,
-//       requestBody: req.body
-//     });
-//     res.status(500).json({ 
-//       error: "Login failed",
-//       details: process.env.NODE_ENV === 'development' ? err.message : undefined
-//     });
-//   }
-// }
 async function login(req, res) {
   try {
     const { loginId, password } = req.body; // Accept loginId (can be userId or employeeId)
@@ -131,13 +73,14 @@ async function login(req, res) {
     }
 
     console.log('User authenticated successfully:', loginId);
-    req.session.user = { userId: user.userId, employeeId: user.employeeId, employeeType: user.employeeType };
+    req.session.user = { userId: user.userId, employeeId: user.employeeId, employeeType: user.employeeType  };
     res.status(200).json({ 
       message: "Login successful",
       user: { 
         userId: user.userId,
         employeeId: user.employeeId,
-        employeeType: user.employeeType
+        employeeType: user.employeeType,
+        HOD: typeof user.HOD === "string" ? user.HOD : "" // Always send HOD name or empty string
       }
     });
   } catch (err) {
@@ -166,44 +109,7 @@ async function logout(req, res) {
   }
 }
 
-// async function register(req, res) {
-//   try {
-//     const { userId, password } = req.body;
-//     console.log('Registration request for:', userId);
 
-//     // Validate input
-//     if (!userId || !password) {
-//       console.log('Missing registration fields');
-//       return res.status(400).json({ error: "UserId and password are required" });
-//     }
-
-//     // Check if user already exists
-//     const existingUser = await UserModel.getUserById(userId);
-//     if (existingUser) {
-//       console.log('User already exists:', userId);
-//       return res.status(409).json({ error: "User already exists" });
-//     }
-
-//     // Create new user
-//     const newUserId = await UserModel.createUser({ userId, password });
-//     console.log('New user created:', newUserId);
-
-//     res.status(201).json({ 
-//       message: "Registration successful",
-//       userId
-//     });
-//   } catch (err) {
-//     console.error('Registration error:', {
-//       message: err.message,
-//       stack: err.stack,
-//       requestBody: req.body
-//     });
-//     res.status(500).json({ 
-//       error: "Registration failed",
-//       details: process.env.NODE_ENV === 'development' ? err.message : undefined
-//     });
-//   }
-// }
 
 async function register(req, res) {
   try {
@@ -278,3 +184,8 @@ module.exports = {
   register,
   changePassword
 };
+
+// After login response
+// console.log("Login response user object:", response.data.user);
+// console.log("HOD value:", response.data.user.HOD);
+// localStorage.setItem("HOD", response.data.user.HOD);

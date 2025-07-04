@@ -69,9 +69,10 @@ async findByLogin(identifier, password) {
     password: hashedPassword,
     employeeId: data.employeeId,
     employeeType: data.employeeType,
+    HOD: data.HOD || "", // <-- Add this line to store HOD if provided, else empty string
     createdAt: new Date(),
   };
-  console.log('Creating new user:', userProfile.userId, userProfile.employeeId, userProfile.employeeType);
+  console.log('Creating new user:', userProfile.userId, userProfile.employeeId, userProfile.employeeType, userProfile.HOD);
   const result = await db.collection("Users").insertOne(userProfile);
   return result.insertedId;
 },
