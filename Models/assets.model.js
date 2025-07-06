@@ -60,21 +60,22 @@ const DigitalAssetsModel = {
       BP: {
         name: data.BP.name,
         prismId: data.BP.prismId,
-        deptName: data.BP.deptname,
+        deptName: data.BP.deptName, // <-- fix typo
+        employeeId: data.BP.employeeId, // <-- add this line
         url: data.BP.url,
-        publicIp: data.BP.public_ip,
+        publicIp: data.BP.publicIp, // <-- fix typo
         HOD: data.BP.HOD,
         nodalOfficerNIC: {
-          name: data.BP.nodalofficerNIC.Name,
-          empCode: data.BP.nodalofficerNIC.Emp_code,
-          mobile: data.BP.nodalofficerNIC.Mob,
-          email: data.BP.nodalofficerNIC.Email,
+          name: data.BP.nodalOfficerNIC.name, // <-- fix typo
+          empCode: data.BP.nodalOfficerNIC.empCode, // <-- fix typo
+          mobile: data.BP.nodalOfficerNIC.mobile, // <-- fix typo
+          email: data.BP.nodalOfficerNIC.email, // <-- fix typo
         },
         nodalOfficerDept: {
-          name: data.BP.nodalofficerDept.Name,
-          designation: data.BP.nodalofficerDept.Designation,
-          mobile: data.BP.nodalofficerDept.Mob,
-          email: data.BP.nodalofficerDept.Email,
+          name: data.BP.nodalOfficerDept.name, // <-- fix typo
+          designation: data.BP.nodalOfficerDept.designation, // <-- fix typo
+          mobile: data.BP.nodalOfficerDept.mobile, // <-- fix typo
+          email: data.BP.nodalOfficerDept.email, // <-- fix typo
         },
       },
       SA: {

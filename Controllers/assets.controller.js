@@ -7,30 +7,25 @@ const { ObjectId } = require("mongodb");
 
 async function createAsset(req, res) {
   try {
-  const BP = JSON.parse(req.body.BP);
-  const SA = JSON.parse(req.body.SA);
-  const TS = JSON.parse(req.body.TS);
-  const Infra = JSON.parse(req.body.Infra);
+    // Parse the JSON strings from multipart/form-data
+    const BP = JSON.parse(req.body.BP);
+    const SA = JSON.parse(req.body.SA);
+    const TS = JSON.parse(req.body.TS);
+    const Infra = JSON.parse(req.body.Infra);
 
-  if (req.file) {
-    SA.certificate = req.file.originalname;
+    const assetId = await AssetsModel.createAsset({
+      BP,
+      SA,
+      TS,
+      Infra,
+      certificate: req.file || null,
+    });
+
+    res.status(201).json({ assetId });
+  } catch (err) {
+    console.error("Error in createAsset:", err);
+    res.status(500).json({ error: "Failed to create asset" });
   }
-
-  const assetId = await AssetsModel.createAsset({
-    // assetId,
-    BP,
-    SA,
-    TS,
-    Infra,
-    certificate: req.file || null,
-  });
-
-  return res.status(201).json({ message: "Asset created", assetId });
-} catch (err) {
-  console.error("Error in createAsset:", err);
-  console.log("Request body:", req.body); // 👈 Debug what was received
-  return res.status(500).json({ error: "Error creating asset", details: err.message });
-}
 }
 
 
@@ -590,10 +585,6 @@ async function getExpiringCertNotifications(req, res) {
     res.status(500).json({ error: "Failed to fetch notifications" });
   }
 }
-
-
-
-
 
 // GET notifications about expiring certificates
 async function getExpiringCertNotifications(req, res) {
