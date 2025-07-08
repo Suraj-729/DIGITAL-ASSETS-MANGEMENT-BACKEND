@@ -1,9 +1,10 @@
 const express = require("express");
 const router = express.Router();
-
+const {getDb} = require('../Db/Db'); // Ensure this is correctly imported
 const AssetsController = require('../Controllers/assets.controller');
 const UserController = require('../Controllers/user.controller'); // Add this line
-const upload = require('../middlewares/upload');
+const upload = require('../middlewares/pdfUpload');
+  const { GridFSBucket } = require("mongodb");
 
 // router.post('/assets/createAsset', AssetsController.createAsset);
 router.post('/assets/createAsset', upload.single('certificate'), AssetsController.createAsset);
@@ -21,16 +22,98 @@ router.get("/notifications/latest",AssetsController.getLatestNotifications);
 router.get("/notifications/all",AssetsController.getAllNotifications);
 router.post("/notifications/:id/read",AssetsController.markNotificationRead);
 
-// router.get('/assets/project/:projectName', AssetsController.getAssetByProjectName);
-// router.get('/assets/all-projects', AssetsController.getAllProjects);
+// 🔽 Upload PDF to MongoDB
+router.post("/upload-certificate", upload.single("certificate"), async (req, res) => {
+    try {
+      const db = getDb();
+      const bucket = new GridFSBucket(db, { bucketName: "certificates" });
+  
+      const uploadStream = bucket.openUploadStream(req.file.originalname, {
+        contentType: req.file.mimetype,
+      });
+  
+      uploadStream.end(req.file.buffer);
+  
+      uploadStream.on("finish", () => {
+        return res.status(201).json({ filename: uploadStream.filename });
+      });
+  
+      uploadStream.on("error", (err) => {
+        console.error("Upload error:", err);
+        res.status(500).json({ error: "Error uploading file" });
+      });
+    } catch (err) {
+      console.error("Error in /upload-certificate:", err);
+      res.status(500).json({ error: "Server error" });
+    }
+  });
+  
+  // 🔽 View PDF from MongoDB
+  router.get("/view-certificate/:filename", async (req, res) => {
+    try {
+      const db = getDb();
+      const bucket = new GridFSBucket(db, { bucketName: "certificates" });
+  
+      const downloadStream = bucket.openDownloadStreamByName(req.params.filename);
+  
+      res.set("Content-Type", "application/pdf");
+  
+      downloadStream.pipe(res).on("error", (err) => {
+        console.error("Stream error:", err);
+        res.status(404).json({ error: "File not found" });
+      });
+    } catch (err) {
+      console.error("Error in /view-certificate:", err);
+      res.status(500).json({ error: "Server error" });
+    }
+  });
+  // ✅ Upload VA Report PDF
+router.post("/upload-va-report", upload.single("vaReport"), async (req, res) => {
+  try {
+    const db = getDb();
+    const bucket = new GridFSBucket(db, { bucketName: "vaReports" });
 
-// User routes
-// User routes
-// router.post('/users', UserController.createUser);
-// router.get('/users/verify-email', UserController.verifyEmail);
-// router.get('/users/:email', UserController.getUserByEmail);
-// router.put('/users/:email/password', UserController.updatePassword);
-// router.delete('/users/:email', UserController.deleteUser);
+    const uploadStream = bucket.openUploadStream(req.file.originalname, {
+      contentType: req.file.mimetype,
+    });
+
+    uploadStream.end(req.file.buffer);
+
+    uploadStream.on("finish", () => {
+      return res.status(201).json({ filename: uploadStream.filename });
+    });
+
+    uploadStream.on("error", (err) => {
+      console.error("Upload error:", err);
+      res.status(500).json({ error: "Error uploading file" });
+    });
+  } catch (err) {
+    console.error("Error in /upload-va-report:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// ✅ View VA Report PDF
+router.get("/va-reports/:filename", async (req, res) => {
+  try {
+    const db = getDb();
+    const bucket = new GridFSBucket(db, { bucketName: "vaReports" });
+
+    const downloadStream = bucket.openDownloadStreamByName(req.params.filename);
+
+    res.set("Content-Type", "application/pdf");
+    downloadStream.pipe(res).on("error", (err) => {
+      console.error("Stream error:", err);
+      res.status(404).json({ error: "File not found" });
+    });
+  } catch (err) {
+    console.error("Error in /va-reports/:filename:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+  
+  module.exports = router;
+
 router.post('/users/login', UserController.login);
 router.post('/users/logout', UserController.logout);
 router.post('/users/register', UserController.register);
@@ -39,8 +122,10 @@ router.get('/dashboard/projectDetails/:projectName', AssetsController.getProject
 router.get('/dashboard/by-type/:employeeId', AssetsController.getDashboardByType);
 router.put('/users/change-password', UserController.changePassword);
 router.put('/assets/update/by-project-name/:projectName', upload.single('certificate'), AssetsController.updateAssetByProjectName);
-// router.post('/users/request-password-reset', UserController.requestPasswordReset);
-// router.post('/users/reset-password', UserController.resetPassword);
+
+router.get('/dashboard/filter/department/:deptName', AssetsController.filterByDepartment);
+router.get('/dashboard/filter/datacenter/:dataCenter', AssetsController.filterByDataCenter);
+router.get('/dashboard/filter/prismid/:prismId', AssetsController.filterByPrismId);
 module.exports = router;
 
 
