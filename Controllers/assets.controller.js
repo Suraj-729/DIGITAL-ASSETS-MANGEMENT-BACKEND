@@ -984,7 +984,112 @@ async function filterByPrismId  (req, res) {
   }
 };
 
+async function filterByDepartment (req, res) {
+  try {
+    const deptName = req.params.deptName;
+    if (!deptName) {
+      return res.status(400).json({ error: "Department name is required" });
+    }
 
+    const matchStage = { "BP.deptName": deptName };
+    const data = await getFilteredDashboard(matchStage);
+
+    if (!data.length) {
+      return res.status(404).json({ error: "No assets found for this department" });
+    }
+
+    res.status(200).json(data);
+  } catch (error) {
+    console.error("filterByDepartment error:", error);
+    res.status(500).json({ error: "Internal Server Error", details: error.message });
+  }
+};
+
+async function filterByDataCenter (req, res) {
+  try {
+    const dataCenter = req.params.dataCenter;
+    if (!dataCenter) {
+      return res.status(400).json({ error: "Data center name is required" });
+    }
+
+    const matchStage = { "Infra.dataCentre": dataCenter };
+    const data = await getFilteredDashboard(matchStage);
+
+    if (!data.length) {
+      return res.status(404).json({ error: "No assets found for this data center" });
+    }
+
+    res.status(200).json(data);
+  } catch (error) {
+    console.error("filterByDataCenter error:", error);
+    res.status(500).json({ error: "Internal Server Error", details: error.message });
+  }
+};
+
+async function getFilteredDashboard(matchStage) {
+  const db = getDb();
+
+  const pipeline = [
+    { $match: matchStage },
+    {
+      $project: {
+        _id: 0,
+        assetsId: 1,
+        projectName: "$BP.name",
+        prismId: "$BP.prismId",
+        deptName: "$BP.deptName",
+        HOD: "$BP.HOD",
+        employeeId: "$BP.employeeId",
+        securityAudits: "$SA.securityAudit",
+        dataCentre: "$Infra.dataCentre",
+        createdAt: 1
+      }
+    },
+    { $unwind: { path: "$securityAudits", preserveNullAndEmptyArrays: true } },
+    {
+      $project: {
+        assetsId: 1,
+        projectName: 1,
+        prismId: 1,
+        deptName: 1,
+        HOD: 1,
+        employeeId: 1,
+        auditDate: "$securityAudits.auditDate",
+        expireDate: "$securityAudits.expireDate",
+        tlsNextExpiry: "$securityAudits.tlsNextExpiry",
+        sslLabScore: "$securityAudits.sslLabScore",
+        certificate: "$securityAudits.certificate",
+        auditStatus: "$securityAudits.auditStatus",
+        sslStatus: "$securityAudits.sslStatus",
+        dataCentre: 1,
+        createdAt: 1
+      }
+    },
+    { $sort: { expireDate: 1 } }
+  ];
+
+  return db.collection("Assets").aggregate(pipeline).toArray();
+}
+async function filterByPrismId  (req, res) {
+  try {
+    const prismId = req.params.prismId;
+    if (!prismId) {
+      return res.status(400).json({ error: "Prism ID is required" });
+    }
+
+    const matchStage = { "BP.prismId": prismId };
+    const data = await getFilteredDashboard(matchStage);
+
+    if (!data.length) {
+      return res.status(404).json({ error: "No assets found for this Prism ID" });
+    }
+
+    res.status(200).json(data);
+  } catch (error) {
+    console.error("filterByPrismId error:", error);
+    res.status(500).json({ error: "Internal Server Error", details: error.message });
+  }
+};
 module.exports = {
   createAsset,
   getAsset,
@@ -1004,11 +1109,10 @@ module.exports = {
   getLatestNotifications,
   getAllNotifications,
   getExpiringCertsByEmployeeId,
-  filterByPrismId,
-  filterByDataCenter,
   filterByDepartment,
+  filterByDataCenter,
+  filterByPrismId
 
-  
   // getAssetByProjectName, // Make sure this exists!
   // getAllProjects         // Make sure this exists!
 };

@@ -1,10 +1,12 @@
 const express = require("express");
 const router = express.Router();
-const {getDb} = require('../Db/Db'); // Ensure this is correctly imported
+const { GridFSBucket } = require("mongodb");
+const {getDb} = require('../Db/Db');
+
 const AssetsController = require('../Controllers/assets.controller');
 const UserController = require('../Controllers/user.controller'); // Add this line
 const upload = require('../middlewares/pdfUpload');
-  const { GridFSBucket } = require("mongodb");
+ 
 
 // router.post('/assets/createAsset', AssetsController.createAsset);
 router.post('/assets/createAsset', upload.single('certificate'), AssetsController.createAsset);
@@ -123,9 +125,64 @@ router.get('/dashboard/by-type/:employeeId', AssetsController.getDashboardByType
 router.put('/users/change-password', UserController.changePassword);
 router.put('/assets/update/by-project-name/:projectName', upload.single('certificate'), AssetsController.updateAssetByProjectName);
 
+
+//filter routes
+
+
 router.get('/dashboard/filter/department/:deptName', AssetsController.filterByDepartment);
 router.get('/dashboard/filter/datacenter/:dataCenter', AssetsController.filterByDataCenter);
 router.get('/dashboard/filter/prismid/:prismId', AssetsController.filterByPrismId);
+
+
+router.post("/upload-certificate", upload.single("certificate"), async (req, res) => {
+    try {
+      const db = getDb();
+      const bucket = new GridFSBucket(db, { bucketName: "certificates" });
+  
+      const uploadStream = bucket.openUploadStream(req.file.originalname, {
+        contentType: req.file.mimetype,
+      });
+  
+      uploadStream.end(req.file.buffer);
+  
+      uploadStream.on("finish", () => {
+        return res.status(201).json({ filename: uploadStream.filename });
+      });
+  
+      uploadStream.on("error", (err) => {
+        console.error("Upload error:", err);
+        res.status(500).json({ error: "Error uploading file" });
+      });
+    } catch (err) {
+      console.error("Error in /upload-certificate:", err);
+      res.status(500).json({ error: "Server error" });
+    }
+  });
+  
+  // 🔽 View PDF from MongoDB
+  router.get("/view-certificate/:filename", async (req, res) => {
+    try {
+      const db = getDb();
+      const bucket = new GridFSBucket(db, { bucketName: "certificates" });
+  
+      const downloadStream = bucket.openDownloadStreamByName(req.params.filename);
+  
+      res.set("Content-Type", "application/pdf");
+  
+      downloadStream.pipe(res).on("error", (err) => {
+        console.error("Stream error:", err);
+        res.status(404).json({ error: "File not found" });
+      });
+    } catch (err) {
+      console.error("Error in /view-certificate:", err);
+      res.status(500).json({ error: "Server error" });
+    }
+  });
+
+
+
+// router.post('/users/request-password-reset', UserController.requestPasswordReset);
+// router.post('/users/reset-password', UserController.resetPassword);
 module.exports = router;
 
 
