@@ -441,7 +441,7 @@ async function getProjectDetailsByName(req, res) {
     let matchStage = {};
 
     if (employeeType === "Admin" && /^ADMINNIC-\d+$/.test(employeeId)) {
-      matchStage = {};
+      matchStage = { "BP.employeeId": employeeId };
     } else if (employeeType === "HOD" && /^HODNIC-\d+$/.test(employeeId)) {
       matchStage = { "BP.employeeId": employeeId };
     } else if (employeeType === "ProjectManager" && /^PMNIC-\d+$/.test(employeeId)) {
@@ -492,7 +492,7 @@ async function getProjectDetailsByName(req, res) {
     const dashboardData = await db.collection("Assets").aggregate(pipeline).toArray();
 
     if (!dashboardData.length) {
-      return res.status(404).json({ error: "No assets found for your role" });
+      return res.status(200).json([]);
     }
 
     res.status(200).json(dashboardData);
