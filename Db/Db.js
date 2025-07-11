@@ -13,6 +13,7 @@ async function connectToDb() {
   if (clientInstance && clientInstance.topology && clientInstance.topology.isConnected()) {
     console.log("Already connected to MongoDB, reusing existing connection.");
     return clientInstance;
+
   }
 
   try {
