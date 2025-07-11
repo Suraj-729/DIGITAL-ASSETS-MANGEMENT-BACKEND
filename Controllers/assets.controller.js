@@ -441,12 +441,12 @@ async function getProjectDetailsByName(req, res) {
     let matchStage = {};
 
     if (employeeType === "Admin" && /^ADMINNIC-\d+$/.test(employeeId)) {
-      matchStage = { "BP.employeeId": employeeId };
+      matchStage={};
+      // matchStage = { "BP.employeeId": employeeId };
     } else if (employeeType === "HOD" && /^HODNIC-\d+$/.test(employeeId)) {
       matchStage = { "BP.employeeId": employeeId };
-    } else if (employeeType === "ProjectManager" && /^PMNIC-\d+$/.test(employeeId)) {
-      matchStage = { "BP.employeeId": employeeId };
-    } else {
+    } 
+     else {
       return res.status(403).json({ error: "Unauthorized" });
     }
 
