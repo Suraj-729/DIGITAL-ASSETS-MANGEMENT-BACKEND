@@ -17,11 +17,13 @@ app.use(session({
   secret: SESSION_SECRET || 'your-secret-key-here', // Should be in your config
   resave: false,
   saveUninitialized: false,
+  rolling: false,
   cookie: {
     // secure: process.env.NODE_ENV === 'production', // Enable in production with HTTPS
     secure: false, // Set to true if using HTTPS in production
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    maxAge: 3000000,
+    sameSite: "lax",// 24 hours
   }
 }));
 
@@ -43,6 +45,27 @@ app.use((req, res, next) => {
   });
   next();
 });
+app.get("/session-check", (req, res) => {
+  const session = req.session;
+
+  if (!session || !session.user || !session.createdAt) {
+    return res.status(200).json({ loggedIn: false });
+  }
+
+  const now = Date.now();
+  const sessionAge = now - session.createdAt;
+
+  if (sessionAge > 3000000) { // 1 minute
+    req.session.destroy(() => {
+      console.log("Session expired and destroyed.");
+      res.status(200).json({ loggedIn: false });
+    });
+  } else {
+    res.status(200).json({ loggedIn: true });
+  }
+});
+
+
 
 // Routes
 app.use('/', assetsRoutes);
