@@ -171,17 +171,7 @@ router.get("/view-va-report/:filename", (req, res) => {
 });
 
 
-// router.get('/va-reports/:filename', (req, res) => {
-//   const filename = req.params.filename;
-//   const filePath = path.join(__dirname, 'uploads', filename); // Adjust if stored elsewhere
 
-//   res.sendFile(filePath, (err) => {
-//     if (err) {
-//       console.error("File not found:", filename);
-//       res.status(404).send("File not found");
-//     }
-//   });
-// });
 router.get('/va-reports/:filename', (req, res) => {
   const filename = req.params.filename;
   const filePath = path.join(__dirname, '..', 'uploads', filename); // ← Make sure path is correct
@@ -193,6 +183,9 @@ router.get('/va-reports/:filename', (req, res) => {
     }
   });
 });
+
+
+
 
 module.exports = router;
 

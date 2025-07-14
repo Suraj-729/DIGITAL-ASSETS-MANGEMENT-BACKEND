@@ -26,7 +26,7 @@ app.use(session({
     // secure: process.env.NODE_ENV === 'production', // Enable in production with HTTPS
     secure: false, // Set to true if using HTTPS in production
     httpOnly: true,
-    maxAge: 3000000,
+    maxAge: 300000000,
     sameSite: "lax",// 24 hours
   }
 }));
@@ -59,7 +59,7 @@ app.get("/session-check", (req, res) => {
   const now = Date.now();
   const sessionAge = now - session.createdAt;
 
-  if (sessionAge > 3000000) { // 1 minute
+  if (sessionAge > 300000000) { // 1 minute
     req.session.destroy(() => {
       console.log("Session expired and destroyed.");
       res.status(200).json({ loggedIn: false });
