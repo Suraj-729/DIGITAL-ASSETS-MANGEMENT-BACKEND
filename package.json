@@ -21,6 +21,8 @@
     "is-promise": "^4.0.0",
     "moment": "^2.30.1",
     "mongodb": "^6.17.0",
+    "mongoose": "^8.16.3",
+    "moongoose": "^0.0.5",
     "multer": "^2.0.1",
     "node-cron": "^4.2.0",
     "nodemailer": "^7.0.4"

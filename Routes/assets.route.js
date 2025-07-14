@@ -1,14 +1,44 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 const express = require("express");
 const router = express.Router();
 const { GridFSBucket } = require("mongodb");
-const {getDb} = require('../Db/Db');
-
-const AssetsController = require('../Controllers/assets.controller');
-const UserController = require('../Controllers/user.controller'); // Add this line
+const { getDb } = require('../Db/Db');
+const mongoose = require('mongoose');
 const upload = require('../middlewares/pdfUpload');
+const stream = require('stream');
+const AssetsController = require('../Controllers/assets.controller');
+ const UserController = require('../Controllers/user.controller'); // Add this line
+ const fs = require("fs");
+const path = require("path");
+  // const upload = require('../middlewares/pdfUpload');
  
 
-// router.post('/assets/createAsset', AssetsController.createAsset);
+
+// Asset routes
 router.post('/assets/createAsset', upload.single('certificate'), AssetsController.createAsset);
 router.get('/assets/:assetsId', AssetsController.getAsset);
 router.delete('/assets/:assetsId', AssetsController.deleteAsset);
@@ -20,169 +50,150 @@ router.get('/assets/datacentre/:dataCentre', AssetsController.getAssetsByDataCen
 router.get('/assets/by-department/:deptName', AssetsController.getAssetsByDepartment);
 router.get('/dashboard/expiring/:employeeId', AssetsController.getExpiringCertsByEmployeeId);
 router.get('/notifications/expiring-certificates', AssetsController.getExpiringCertNotifications);
-router.get("/notifications/latest",AssetsController.getLatestNotifications);
-router.get("/notifications/all",AssetsController.getAllNotifications);
-router.post("/notifications/:id/read",AssetsController.markNotificationRead);
+router.get("/notifications/latest", AssetsController.getLatestNotifications);
+router.get("/notifications/all", AssetsController.getAllNotifications);
+router.post("/notifications/:id/read", AssetsController.markNotificationRead);
 
-// 🔽 Upload PDF to MongoDB
-router.post("/upload-certificate", upload.single("certificate"), async (req, res) => {
-    try {
-      const db = getDb();
-      const bucket = new GridFSBucket(db, { bucketName: "certificates" });
-  
-      const uploadStream = bucket.openUploadStream(req.file.originalname, {
-        contentType: req.file.mimetype,
-      });
-  
-      uploadStream.end(req.file.buffer);
-  
-      uploadStream.on("finish", () => {
-        return res.status(201).json({ filename: uploadStream.filename });
-      });
-  
-      uploadStream.on("error", (err) => {
-        console.error("Upload error:", err);
-        res.status(500).json({ error: "Error uploading file" });
-      });
-    } catch (err) {
-      console.error("Error in /upload-certificate:", err);
-      res.status(500).json({ error: "Server error" });
-    }
-  });
-  
-  // 🔽 View PDF from MongoDB
-  router.get("/view-certificate/:filename", async (req, res) => {
-    try {
-      const db = getDb();
-      const bucket = new GridFSBucket(db, { bucketName: "certificates" });
-  
-      const downloadStream = bucket.openDownloadStreamByName(req.params.filename);
-  
-      res.set("Content-Type", "application/pdf");
-  
-      downloadStream.pipe(res).on("error", (err) => {
-        console.error("Stream error:", err);
-        res.status(404).json({ error: "File not found" });
-      });
-    } catch (err) {
-      console.error("Error in /view-certificate:", err);
-      res.status(500).json({ error: "Server error" });
-    }
-  });
-  // ✅ Upload VA Report PDF
-router.post("/upload-va-report", upload.single("vaReport"), async (req, res) => {
-  try {
-    const db = getDb();
-    const bucket = new GridFSBucket(db, { bucketName: "vaReports" });
 
-    const uploadStream = bucket.openUploadStream(req.file.originalname, {
-      contentType: req.file.mimetype,
-    });
 
-    uploadStream.end(req.file.buffer);
 
-    uploadStream.on("finish", () => {
-      return res.status(201).json({ filename: uploadStream.filename });
-    });
 
-    uploadStream.on("error", (err) => {
-      console.error("Upload error:", err);
-      res.status(500).json({ error: "Error uploading file" });
-    });
-  } catch (err) {
-    console.error("Error in /upload-va-report:", err);
-    res.status(500).json({ error: "Server error" });
+
+router.get("/view-va-report/:filename", (req, res) => {
+  const filename = decodeURIComponent(req.params.filename);
+  const filePath = path.join(__dirname, "..", "uploads", filename);
+
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ error: "File not found" });
   }
+
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
+
+  const fileStream = fs.createReadStream(filePath);
+  fileStream.pipe(res);
+
+  fileStream.on("error", (err) => {
+    console.error("File stream error:", err);
+    res.status(500).json({ error: "Error reading the file" });
+  });
 });
 
-// ✅ View VA Report PDF
-router.get("/va-reports/:filename", async (req, res) => {
-  try {
-    const db = getDb();
-    const bucket = new GridFSBucket(db, { bucketName: "vaReports" });
 
-    const downloadStream = bucket.openDownloadStreamByName(req.params.filename);
+// Verification endpoint
 
-    res.set("Content-Type", "application/pdf");
-    downloadStream.pipe(res).on("error", (err) => {
-      console.error("Stream error:", err);
-      res.status(404).json({ error: "File not found" });
-    });
-  } catch (err) {
-    console.error("Error in /va-reports/:filename:", err);
-    res.status(500).json({ error: "Server error" });
-  }
-});
-  
-  module.exports = router;
 
+// User routes
 router.post('/users/login', UserController.login);
 router.post('/users/logout', UserController.logout);
 router.post('/users/register', UserController.register);
-router.get('/dashboard/dataSio',AssetsController.getDashboardAllProjectBySIO);
+router.put('/users/change-password', UserController.changePassword);
+
+// Dashboard routes
+router.get('/dashboard/dataSio', AssetsController.getDashboardAllProjectBySIO);
 router.get('/dashboard/projectDetails/:projectName', AssetsController.getProjectDetailsByName);
 router.get('/dashboard/by-type/:employeeId', AssetsController.getDashboardByType);
-router.put('/users/change-password', UserController.changePassword);
 router.put('/assets/update/by-project-name/:projectName', upload.single('certificate'), AssetsController.updateAssetByProjectName);
 
-
-//filter routes
-
-
+// Filter routes
 router.get('/dashboard/filter/department/:deptName', AssetsController.filterByDepartment);
 router.get('/dashboard/filter/datacenter/:dataCenter', AssetsController.filterByDataCenter);
 router.get('/dashboard/filter/prismid/:prismId', AssetsController.filterByPrismId);
 
 
-router.post("/upload-certificate", upload.single("certificate"), async (req, res) => {
-    try {
-      const db = getDb();
-      const bucket = new GridFSBucket(db, { bucketName: "certificates" });
-  
-      const uploadStream = bucket.openUploadStream(req.file.originalname, {
-        contentType: req.file.mimetype,
-      });
-  
-      uploadStream.end(req.file.buffer);
-  
-      uploadStream.on("finish", () => {
-        return res.status(201).json({ filename: uploadStream.filename });
-      });
-  
-      uploadStream.on("error", (err) => {
-        console.error("Upload error:", err);
-        res.status(500).json({ error: "Error uploading file" });
-      });
-    } catch (err) {
-      console.error("Error in /upload-certificate:", err);
-      res.status(500).json({ error: "Server error" });
+
+// ✅ Upload VA Report (Disk Storage)
+router.post("/upload-va-report", upload.single("vaReport"), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+
+    res.status(201).json({
+      message: "VA Report uploaded successfully",
+      filename: req.file.filename,
+      path: req.file.path,
+    });
+  } catch (err) {
+    console.error("Upload error:", err);
+    res.status(500).json({ error: "Upload failed", details: err.message });
+  }
+});
+
+// ✅ View VA Report
+// router.get("/view-va-report/:filename", (req, res) => {
+//   const filename = decodeURIComponent(req.params.filename);
+//   const filePath = path.join(__dirname, "..", "uploads", filename);
+
+//   if (!fs.existsSync(filePath)) {
+//     return res.status(404).json({ error: "File not found" });
+//   }
+
+//   res.setHeader("Content-Type", "application/pdf");
+//   res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
+
+//   const fileStream = fs.createReadStream(filePath);
+//   fileStream.pipe(res);
+
+//   fileStream.on("error", (err) => {
+//     console.error("File stream error:", err);
+//     res.status(500).json({ error: "Error reading the file" });
+//   });
+// });
+
+router.post("/upload-va-report", upload.single("vaReport"), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+  res.status(201).json({ filename: req.file.filename });
+});
+router.get("/va-reports/:filename", (req, res) => {
+  const filename = req.params.filename;
+  const filePath = path.join(__dirname, "..", "uploads", filename);
+  res.sendFile(filePath, (err) => {
+    if (err) {
+      console.error("File not found:", filename);
+      res.status(404).send("File not found");
     }
   });
-  
-  // 🔽 View PDF from MongoDB
-  router.get("/view-certificate/:filename", async (req, res) => {
-    try {
-      const db = getDb();
-      const bucket = new GridFSBucket(db, { bucketName: "certificates" });
-  
-      const downloadStream = bucket.openDownloadStreamByName(req.params.filename);
-  
-      res.set("Content-Type", "application/pdf");
-  
-      downloadStream.pipe(res).on("error", (err) => {
-        console.error("Stream error:", err);
-        res.status(404).json({ error: "File not found" });
-      });
-    } catch (err) {
-      console.error("Error in /view-certificate:", err);
-      res.status(500).json({ error: "Server error" });
+});
+
+// View certificate
+router.get("/view-certificate/:filename", (req, res) => {
+  const filename = req.params.filename;
+  const filePath = path.join(__dirname, "..", "uploads", filename); // or GridFS stream
+  res.sendFile(filePath);
+});
+
+// View VA report
+router.get("/view-va-report/:filename", (req, res) => {
+  const filename = req.params.filename;
+  const filePath = path.join(__dirname, "..", "uploads", filename);
+  res.sendFile(filePath);
+});
+
+
+// router.get('/va-reports/:filename', (req, res) => {
+//   const filename = req.params.filename;
+//   const filePath = path.join(__dirname, 'uploads', filename); // Adjust if stored elsewhere
+
+//   res.sendFile(filePath, (err) => {
+//     if (err) {
+//       console.error("File not found:", filename);
+//       res.status(404).send("File not found");
+//     }
+//   });
+// });
+router.get('/va-reports/:filename', (req, res) => {
+  const filename = req.params.filename;
+  const filePath = path.join(__dirname, '..', 'uploads', filename); // ← Make sure path is correct
+
+  res.sendFile(filePath, (err) => {
+    if (err) {
+      console.error("File not found:", filename);
+      res.status(404).send("File not found");
     }
   });
+});
 
-
-
-// router.post('/users/request-password-reset', UserController.requestPasswordReset);
-// router.post('/users/reset-password', UserController.resetPassword);
 module.exports = router;
 
 

@@ -49,6 +49,8 @@ async function getAsset(req, res) {
   }
 }
 
+
+
 async function deleteAsset(req, res) {
   try {
     const { assetsId } = req.params;
@@ -64,6 +66,7 @@ async function deleteAsset(req, res) {
     res.status(500).json({ error: "Failed to delete asset" });
   }
 }
+
 
 // Update BP section
 async function updateBP(req, res) {
@@ -423,7 +426,7 @@ async function getProjectDetailsByName(req, res) {
   }
 }
 
-// async function 
+
 
 
 
@@ -729,22 +732,7 @@ async function getExpiringCertsByEmployeeId(req, res) {
   }
 }
 
-// GET newest unread (limit 5)
-// async function getLatestNotifications(req, res) {
-//   const db = getDb();
-//   const { employeeId } = req.session.user;        // from login session
 
-//   const user = await db
-//     .collection("Users")
-//     .findOne({ employeeId }, { projection: { notifications: 1 } });
-
-//   const latest = (user?.notifications || [])
-//     .filter(n => !n.read)
-//     .sort((a, b) => b.createdAt - a.createdAt)
-//     .slice(0, 5);
-
-//   res.json(latest);
-// }
 async function getLatestNotifications(req, res) {
   const sessionUser = req.session.user;
   if (!sessionUser || !sessionUser.employeeId) {
@@ -962,7 +950,8 @@ async function getFilteredDashboard(matchStage) {
   ];
 
   return db.collection("Assets").aggregate(pipeline).toArray();
-}
+};
+
 async function filterByPrismId  (req, res) {
   try {
     const prismId = req.params.prismId;
@@ -1070,6 +1059,7 @@ async function getFilteredDashboard(matchStage) {
 
   return db.collection("Assets").aggregate(pipeline).toArray();
 }
+
 async function filterByPrismId  (req, res) {
   try {
     const prismId = req.params.prismId;
@@ -1090,6 +1080,10 @@ async function filterByPrismId  (req, res) {
     res.status(500).json({ error: "Internal Server Error", details: error.message });
   }
 };
+
+
+
+
 module.exports = {
   createAsset,
   getAsset,

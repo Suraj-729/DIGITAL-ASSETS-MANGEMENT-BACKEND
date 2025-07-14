@@ -1,6 +1,7 @@
 
 const express = require('express');
 const cors = require('cors');
+const path = require("path");
 const session = require('express-session'); // Add this line
 const bodyParser = require('body-parser');
 const { connectToDb } = require('./Db/Db');
@@ -11,6 +12,9 @@ const notifyUsersAboutExpiringCerts = require("./utils/checkAndNotifyExpiringCer
 //  Make sure you have this
 
 const app = express();
+
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));  
+
 
 // Session Configuration (Add this before other middleware)
 app.use(session({
