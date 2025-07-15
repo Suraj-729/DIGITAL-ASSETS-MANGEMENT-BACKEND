@@ -74,6 +74,7 @@ async function login(req, res) {
 
     console.log('User authenticated successfully:', loginId);
     req.session.user = { userId: user.userId, employeeId: user.employeeId, employeeType: user.employeeType  };
+    req.session.createdAt = Date.now(); 
     res.status(200).json({ 
       message: "Login successful",
       user: { 
