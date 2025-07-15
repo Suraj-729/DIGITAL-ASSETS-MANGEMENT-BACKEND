@@ -30,6 +30,19 @@ const DigitalAssetsModel = {
   // },
   async createAsset(data) {
     const db = getDb();
+    let assetsId;
+    let isUnique = false;
+  
+    while (!isUnique) {
+      const randomNum = Math.floor(1000 + Math.random() * 9000); // 4-digit random number
+      const tempId = `NICBBSR-${randomNum}`;
+  
+      const existing = await db.collection("Assets").findOne({ assetsId: tempId });
+      if (!existing) {
+        assetsId = tempId;
+        isUnique = true;
+      }
+    }
 
     if (!data.BP || !data.SA || !data.TS || !data.Infra) {
       throw new Error("Missing required asset sections (BP, SA, TS, Infra)");
@@ -57,7 +70,7 @@ const DigitalAssetsModel = {
     });
 
     const assetProfile = {
-      // assetsId: assetsId,
+      assetsId: assetsId,
       BP: {
         name: data.BP.name,
         prismId: data.BP.prismId,
@@ -117,7 +130,7 @@ const DigitalAssetsModel = {
     };
 
     const result = await db.collection("Assets").insertOne(assetProfile);
-    return result.insertedId;
+    return assetsId;
   },
 
   // ✅ Get full asset by custom asset ID
