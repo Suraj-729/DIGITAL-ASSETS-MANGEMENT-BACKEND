@@ -1,28 +1,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 const express = require("express");
 const router = express.Router();
 const { GridFSBucket } = require("mongodb");
@@ -82,6 +60,9 @@ router.get("/view-va-report/:filename", (req, res) => {
 
 // Verification endpoint
 
+
+  
+  // module.exports = router;
 
 // User routes
 router.post('/users/login', UserController.login);
