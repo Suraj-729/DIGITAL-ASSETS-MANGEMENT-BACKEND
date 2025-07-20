@@ -529,15 +529,26 @@ async function getDashboardByType(req, res) {
     //   return res.status(403).json({ error: "Unauthorized" });
     // }
 
-    if (employeeType === "Admin" && /^ADMINNIC-\d+$/.test(employeeId)) {
+//     if (employeeType === "Admin" && /^ADMINNIC-\d+$/.test(employeeId)) {
+//   matchStage = {}; // Admin sees everything
+// } else if (employeeType === "HOD" && /^HODNIC-\d+$/.test(employeeId)) {
+//   matchStage = { "BP.employeeId": employeeId };
+// } else if (employeeType === "PM" && /^\d+$/.test(employeeId)) {
+//   matchStage = { "BP.nodalOfficerNIC.empCode": `${employeeId}` }; 
+// } else {
+//   return res.status(403).json({ error: "Unauthorized: Invalid employeeId or employeeType" });
+// }
+
+if (employeeType === "Admin" && /^\d{4}$/.test(employeeId)) {
   matchStage = {}; // Admin sees everything
-} else if (employeeType === "HOD" && /^HODNIC-\d+$/.test(employeeId)) {
+} else if (employeeType === "HOD" && /^\d{4}$/.test(employeeId)) {
   matchStage = { "BP.employeeId": employeeId };
-} else if (employeeType === "PM" && /^\d+$/.test(employeeId)) {
-  matchStage = { "BP.nodalOfficerNIC.empCode": `${employeeId}` }; 
+} else if (employeeType === "PM" && /^\d{4}$/.test(employeeId)) {
+  matchStage = { "BP.nodalOfficerNIC.empCode": employeeId }; 
 } else {
   return res.status(403).json({ error: "Unauthorized: Invalid employeeId or employeeType" });
 }
+
 
 
     const pipeline = [
