@@ -430,7 +430,83 @@ async function getProjectDetailsByName(req, res) {
 
 
 
- async function getDashboardByType(req, res) {
+
+//  async function getDashboardByType(req, res) {
+//   try {
+//     const db = getDb();
+//     const employeeId = req.params.employeeId || (req.user && req.user.employeeId);
+//     const employeeType = req.query.employeeType || (req.user && req.user.employeeType);
+//     const name = req.query.name || (req.user && req.user.name);
+
+//     if (!employeeId || !employeeType) {
+//       return res.status(400).json({ error: "employeeId and employeeType are required" });
+//     }
+
+//     let matchStage = {};
+
+//     if (employeeType === "Admin" && /^ADMINNIC-\d+$/.test(employeeId)) {
+//       matchStage={};
+//       // matchStage = { "BP.employeeId": employeeId };
+//     } else if (employeeType === "HOD" && /^HODNIC-\d+$/.test(employeeId)) {
+//       matchStage = { "BP.employeeId": employeeId };
+//     } 
+//      else {
+//       return res.status(403).json({ error: "Unauthorized" });
+//     }
+
+//     const pipeline = [
+//       { $match: matchStage },
+//       {
+//         $project: {
+//           _id: 0,
+//           assetsId: 1,
+//           projectName: "$BP.name",
+//           prismId: "$BP.prismId",
+//           deptName: "$BP.deptName",
+//           HOD: "$BP.HOD",
+//           employeeId: "$BP.employeeId",
+//           securityAudits: "$SA.securityAudit",
+//           dataCentre: "$Infra.dataCentre",
+//           createdAt: 1
+//         }
+//       },
+//       { $unwind: { path: "$securityAudits", preserveNullAndEmptyArrays: true } },
+//       {
+//         $project: {
+//           assetsId: 1,
+//           projectName: 1,
+//           prismId: 1,
+//           deptName: 1,
+//           HOD: 1,
+//           employeeId: 1,
+//           auditDate: "$securityAudits.auditDate",
+//           expireDate: "$securityAudits.expireDate",
+//           tlsNextExpiry: "$securityAudits.tlsNextExpiry",
+//           sslLabScore: "$securityAudits.sslLabScore",
+//           certificate: "$securityAudits.certificate",
+//           auditStatus: "$securityAudits.auditStatus",   // <-- Add this line
+//           sslStatus: "$securityAudits.sslStatus",       // <-- Add this line
+//           dataCentre: 1,
+//           createdAt: 1
+//         }
+//       },
+//       { $sort: { expireDate: 1 } }
+//     ];
+
+//     const dashboardData = await db.collection("Assets").aggregate(pipeline).toArray();
+
+//     if (!dashboardData.length) {
+//       return res.status(200).json([]);
+//     }
+
+//     res.status(200).json(dashboardData);
+//   } catch (err) {
+//     console.error("Error in getDashboardByType:", err);
+//     res.status(500).json({ error: "Failed to fetch dashboard data", details: err.message });
+//   }
+// }
+
+async function getDashboardByType(req, res) {
   try {
     const db = getDb();
     const employeeId = req.params.employeeId || (req.user && req.user.employeeId);
@@ -443,15 +519,37 @@ async function getProjectDetailsByName(req, res) {
 
     let matchStage = {};
 
-    if (employeeType === "Admin" && /^ADMINNIC-\d+$/.test(employeeId)) {
-      matchStage={};
-      // matchStage = { "BP.employeeId": employeeId };
-    } else if (employeeType === "HOD" && /^HODNIC-\d+$/.test(employeeId)) {
-      matchStage = { "BP.employeeId": employeeId };
-    } 
-     else {
-      return res.status(403).json({ error: "Unauthorized" });
-    }
+    // if (employeeType === "Admin" && /^ADMINNIC-\d+$/.test(employeeId)) {
+    //   matchStage = {}; // Admin can see everything
+    // } else if (employeeType === "HOD" && /^HODNIC-\d+$/.test(employeeId)) {
+    //   matchStage = { "BP.employeeId": employeeId };
+    // } else if (employeeType === "PM" && /^PMNIC-\d+$/.test(employeeId)) {
+    //   matchStage = { "BP.nodalOfficerNIC.empCode": employeeId };
+    // } else {
+    //   return res.status(403).json({ error: "Unauthorized" });
+    // }
+
+//     if (employeeType === "Admin" && /^ADMINNIC-\d+$/.test(employeeId)) {
+//   matchStage = {}; // Admin sees everything
+// } else if (employeeType === "HOD" && /^HODNIC-\d+$/.test(employeeId)) {
+//   matchStage = { "BP.employeeId": employeeId };
+// } else if (employeeType === "PM" && /^\d+$/.test(employeeId)) {
+//   matchStage = { "BP.nodalOfficerNIC.empCode": `${employeeId}` }; 
+// } else {
+//   return res.status(403).json({ error: "Unauthorized: Invalid employeeId or employeeType" });
+// }
+
+if (employeeType === "Admin" && /^\d{4}$/.test(employeeId)) {
+  matchStage = {}; // Admin sees everything
+} else if (employeeType === "HOD" && /^\d{4}$/.test(employeeId)) {
+  matchStage = { "BP.employeeId": employeeId };
+} else if (employeeType === "PM" && /^\d{4}$/.test(employeeId)) {
+  matchStage = { "BP.nodalOfficerNIC.empCode": employeeId }; 
+} else {
+  return res.status(403).json({ error: "Unauthorized: Invalid employeeId or employeeType" });
+}
+
+
 
     const pipeline = [
       { $match: matchStage },
@@ -483,8 +581,8 @@ async function getProjectDetailsByName(req, res) {
           tlsNextExpiry: "$securityAudits.tlsNextExpiry",
           sslLabScore: "$securityAudits.sslLabScore",
           certificate: "$securityAudits.certificate",
-          auditStatus: "$securityAudits.auditStatus",   // <-- Add this line
-          sslStatus: "$securityAudits.sslStatus",       // <-- Add this line
+          auditStatus: "$securityAudits.auditStatus",
+          sslStatus: "$securityAudits.sslStatus",
           dataCentre: 1,
           createdAt: 1
         }
@@ -494,16 +592,13 @@ async function getProjectDetailsByName(req, res) {
 
     const dashboardData = await db.collection("Assets").aggregate(pipeline).toArray();
 
-    if (!dashboardData.length) {
-      return res.status(200).json([]);
-    }
-
     res.status(200).json(dashboardData);
   } catch (err) {
     console.error("Error in getDashboardByType:", err);
     res.status(500).json({ error: "Failed to fetch dashboard data", details: err.message });
   }
 }
+
 
 async function updateAssetByProjectName(req, res) {
   try {
