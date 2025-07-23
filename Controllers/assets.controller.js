@@ -641,98 +641,14 @@ async function updateAssetByProjectName(req, res) {
   }
 }
 
-async function getExpiringCertNotifications(req, res) {
-  const db = getDb();
-  const today = new Date();
-  const WARNING_DAYS = 30;
-
-  try {
-    const notifications = [];
-
-    const assets = await db.collection("Assets").find({}).toArray();
-
-    for (const asset of assets) {
-      const empId = asset?.BP?.employeeId;
-      if (!empId) continue;
-
-      const user = await db.collection("Users").findOne({ employeeId: empId });
-      if (!user || !user.userId) continue;
-
-      for (const audit of asset?.SA?.securityAudit || []) {
-        const expiry = audit.tlsNextExpiry || audit.expireDate;
-        if (!expiry) continue;
-
-        const daysLeft = moment(expiry).diff(moment(today), "days");
-        if (daysLeft <= WARNING_DAYS && daysLeft >= 0) {
-          notifications.push({
-            assetName: asset.BP.name,
-            projectName: asset.BP.name, // 👈 used by frontend
-            prismId: asset.BP.prismId,
-            employeeId: empId,
-            daysLeft,
-            expireDate: moment(expiry).format("DD-MMM-YYYY"),
-            message: `SSL/TLS certificate will expire on ${moment(expiry).format("DD-MMM-YYYY")}`,
-          });
-        }
-      }
-    }
-
-    res.status(200).json({ notifications });
-  } catch (err) {
-    console.error("Notification Fetch Error:", err);
-    res.status(500).json({ error: "Failed to fetch notifications"});
-  }
-}
-
-// GET notifications about expiring certificates
-async function getExpiringCertNotifications(req, res) {
-  const db = getDb();
-  const today = new Date();
-  const WARNING_DAYS = 30;
-
-  try {
-    const notifications = [];
-
-    const assets = await db.collection("Assets").find({}).toArray();
-
-    for (const asset of assets) {
-      const empId = asset?.BP?.employeeId;
-      if (!empId) continue;
-
-      const user = await db.collection("Users").findOne({ employeeId: empId });
-      if (!user || !user.userId) continue;
-
-      for (const audit of asset?.SA?.securityAudit || []) {
-        const expiry = audit.tlsNextExpiry || audit.expireDate;
-        if (!expiry) continue;
-
-        const daysLeft = moment(expiry).diff(moment(today), "days");
-        if (daysLeft <= WARNING_DAYS && daysLeft >= 0) {
-          notifications.push({
-            assetName: asset.BP.name,
-            projectName: asset.BP.name, // 👈 used by frontend
-            prismId: asset.BP.prismId,
-            employeeId: empId,
-            daysLeft,
-            expireDate: moment(expiry).format("DD-MMM-YYYY"),
-            message: `SSL/TLS certificate will expire on ${moment(expiry).format("DD-MMM-YYYY")}`,
-          });
-        }
-      }
-    }
-
-    res.status(200).json({ notifications });
-  } catch (err) {
-    console.error("Notification Fetch Error:", err);
-    res.status(500).json({ error: "Failed to fetch notifications" });
-  }
-}
 // async function getExpiringCertNotifications(req, res) {
 //   const db = getDb();
 //   const today = new Date();
 //   const WARNING_DAYS = 30;
 
 //   try {
+//     const notifications = [];
+
 //     const assets = await db.collection("Assets").find({}).toArray();
 
 //     for (const asset of assets) {
@@ -748,217 +664,198 @@ async function getExpiringCertNotifications(req, res) {
 
 //         const daysLeft = moment(expiry).diff(moment(today), "days");
 //         if (daysLeft <= WARNING_DAYS && daysLeft >= 0) {
-//           const expireDateStr = moment(expiry).format("DD-MMM-YYYY");
-
-//           // Check if same notification already exists
-//           const existing = (user.notifications || []).some(n =>
-//             n.assetName === asset.BP.name &&
-//             n.expireDate === expireDateStr &&
-//             !n.read
-//           );
-//           if (existing) continue;
-
-//           // Create notification object
-//           const notification = {
-//             _id: new ObjectId(),
+//           notifications.push({
 //             assetName: asset.BP.name,
-//             projectName: asset.BP.name,
+//             projectName: asset.BP.name, // 👈 used by frontend
 //             prismId: asset.BP.prismId,
 //             employeeId: empId,
-//             read: false,
-//             type: daysLeft <= 7 ? "critical" : "warning", // or use your own logic
-//             createdAt: new Date(),
-//             expireDate: expireDateStr,
-//             message: `SSL/TLS certificate will expire on ${expireDateStr}`,
-//           };
-
-//           // Push to user.notifications
-//           await db.collection("Users").updateOne(
-//             { employeeId: empId },
-//             { $push: { notifications: notification } }
-//           );
+//             daysLeft,
+//             expireDate: moment(expiry).format("DD-MMM-YYYY"),
+//             message: `SSL/TLS certificate will expire on ${moment(expiry).format("DD-MMM-YYYY")}`,
+//           });
 //         }
 //       }
 //     }
 
-//     res.status(200).json({ message: "Expiry notifications synced to user accounts" });
+//     res.status(200).json({ notifications });
 //   } catch (err) {
 //     console.error("Notification Fetch Error:", err);
-//     res.status(500).json({ error: "Failed to fetch notifications" });
-//   }
+//     res.status(500).json({ error: "Failed to fetch notifications"});
+//   }
 // }
 
+// async function getExpiringCertsByEmployeeId(req, res) {
+//   try {
+//     const db = getDb();
+//     const { employeeId } = req.params;
+//     const WARNING_DAYS = 30;
+//     const today = new Date();
 
-async function getExpiringCertsByEmployeeId(req, res) {
+//     const assets = await db
+//       .collection("Assets")
+//       .find({ "BP.nodalOfficerNIC.empCode": employeeId })
+//       .toArray();
+
+//     const expiring = [];
+
+//     assets.forEach((asset) => {
+//       (asset.SA?.securityAudit || []).forEach((audit) => {
+//         const expiry = audit.tlsNextExpiry || audit.expireDate;
+//         if (!expiry) return;
+//         const daysLeft = moment(expiry).diff(moment(today), "days");
+//         if (daysLeft <= WARNING_DAYS && daysLeft >= 0) {
+//           expiring.push({
+//             assetsId: asset.assetsId,
+//             projectName: asset.BP.name,
+//             prismId: asset.BP.prismId,
+//             expiry,
+//             daysLeft
+//           });
+//         }
+//       });
+//     });
+
+//     res.json({ employeeId, total: expiring.length, expiring });
+//   } catch (err) {
+//     console.error("getExpiringCertsByEmployeeId:", err);
+//     res.status(500).json({ error: "Failed to fetch expiry data", details: err.message });
+//   }
+// }
+// async function getExpiringCertByAssetsId(req, res) {
+//   try {
+//     const db = getDb();
+//     const { assetsId } = req.params;
+//     const WARNING_DAYS = 30;
+//     const today = new Date();
+
+//     const asset = await db.collection("Assets").findOne({ assetsId });
+
+//     if (!asset) {
+//       return res.status(404).json({ message: "Asset not found" });
+//     }
+
+//     const expiring = [];
+
+//     (asset.SA?.securityAudit || []).forEach((audit) => {
+//       const expiry = audit.tlsNextExpiry || audit.expireDate;
+//       if (!expiry) return;
+//       const daysLeft = moment(expiry).diff(moment(today), "days");
+
+//       if (daysLeft <= WARNING_DAYS && daysLeft >= 0) {
+//         expiring.push({
+//           projectName: asset.BP?.name || "Unknown Project",
+//           prismId: asset.BP?.prismId || "",
+//           expiry: moment(expiry).format("DD-MMM-YYYY"),
+//           daysLeft,
+//           message: `SSL/TLS certificate will expire on ${moment(expiry).format("DD-MMM-YYYY")}`,
+//         });
+//       }
+//     });
+
+//     res.status(200).json({
+//       assetsId,
+//       total: expiring.length,
+//       expiring,
+//     });
+//   } catch (err) {
+//     console.error("getExpiringCertByAssetsId:", err);
+//     res.status(500).json({
+//       error: "Failed to fetch expiry data",
+//       details: err.message,
+//     });
+//   }
+// };
+const getExpiringCertsByEmployeeId = async (req, res) => {
   try {
-    const db = getDb();
+    const db = await getDb();
     const { employeeId } = req.params;
-    const WARNING_DAYS = 30;
+
+    if (!employeeId) {
+      return res.status(400).json({ message: "Missing employeeId" });
+    }
+
     const today = new Date();
 
-    const assets = await db
-      .collection("Assets")
-      .find({ "BP.nodalOfficerNIC.empCode": employeeId })
-      .toArray();
+    // Get all assets assigned to this employee
+    const assets = await db.collection("Assets").find({ "BP.employeeId": employeeId }).toArray();
+
+    if (!assets.length) {
+      return res.status(404).json({ message: "No assets found for this employee" });
+    }
 
     const expiring = [];
 
-    assets.forEach((asset) => {
-      (asset.SA?.securityAudit || []).forEach((audit) => {
-        const expiry = audit.tlsNextExpiry || audit.expireDate;
-        if (!expiry) return;
-        const daysLeft = moment(expiry).diff(moment(today), "days");
-        if (daysLeft <= WARNING_DAYS && daysLeft >= 0) {
-          expiring.push({
-            assetsId: asset.assetsId,
-            projectName: asset.BP.name,
-            prismId: asset.BP.prismId,
-            expiry,
-            daysLeft
-          });
+    assets.forEach((item) => {
+      const assetId = item.assetsId || "Unknown";
+      const projectName = item.BP?.name || "Unnamed Project";
+
+      const securityAudits = item.SA?.securityAudit || [];
+
+      securityAudits.forEach((audit) => {
+        const type = audit.typeOfAudit?.toLowerCase();
+        const expireDate = new Date(audit.expireDate);
+
+        if ((type === "tls" || type === "ssl") && expireDate > today) {
+          const daysLeft = Math.ceil((expireDate - today) / (1000 * 60 * 60 * 24));
+          if (daysLeft <= 30) {
+            expiring.push({
+              assetId,
+              projectName,
+              message: `Your ${audit.typeOfAudit} certificate is expiring in ${daysLeft} day(s).`,
+              daysLeft,
+              expireDate,
+            });
+          }
         }
       });
     });
 
-    res.json({ employeeId, total: expiring.length, expiring });
-  } catch (err) {
-    console.error("getExpiringCertsByEmployeeId:", err);
-    res.status(500).json({ error: "Failed to fetch expiry data", details: err.message });
+    return res.status(200).json({ expiring });
+  } catch (error) {
+    console.error("Error fetching expiring certificates by employeeId:", error);
+    return res.status(500).json({ message: "Server error" });
   }
-}
+};
 
+// async function getLatestNotifications(req, res) {
+//   const sessionUser = req.session.user;
+//   if (!sessionUser || !sessionUser.employeeId) {
+//     return res.status(401).json({ error: "Unauthorized. Please login." });
+//   }
 
-async function getLatestNotifications(req, res) {
-  const sessionUser = req.session.user;
-  if (!sessionUser || !sessionUser.employeeId) {
-    return res.status(401).json({ error: "Unauthorized. Please login." });
-  }
+//   const db = getDb();
+//   const { employeeId } = sessionUser;
 
-  const db = getDb();
-  const { employeeId } = sessionUser;
+//   const user = await db.collection("Users").findOne(
+//     { employeeId },
+//     { projection: { notifications: 1 } }
+//   );
 
-  const user = await db.collection("Users").findOne(
-    { employeeId },
-    { projection: { notifications: 1 } }
-  );
+//   const latest = (user?.notifications || [])
+//     .filter(n => !n.read)
+//     .sort((a, b) => b.createdAt - a.createdAt)
+//     .slice(0, 5);
 
-  const latest = (user?.notifications || [])
-    .filter(n => !n.read)
-    .sort((a, b) => b.createdAt - a.createdAt)
-    .slice(0, 5);
-
-  res.json(latest);
-}
+//   res.json(latest);
+// }
 
 
 
 // GET all notifications
-async function getAllNotifications(req, res) {
-  const db = getDb();
-  const { employeeId } = req.session.user;
+// async function getAllNotifications(req, res) {
+//   const db = getDb();
+//   const { employeeId } = req.session.user;
 
-  const user = await db
-    .collection("Users")
-    .findOne({ employeeId }, { projection: { notifications: 1 } });
+//   const user = await db
+//     .collection("Users")
+//     .findOne({ employeeId }, { projection: { notifications: 1 } });
 
-  res.json(user?.notifications || []);
-}
-
-// POST mark one as read
-async function markNotificationRead(req, res) {
-  const db = getDb();
-  const { employeeId } = req.session.user;
-  const { id } = req.params;                 // notification _id
-
-  await db.collection("Users").updateOne(
-    { employeeId, "notifications._id": ObjectId(id) },
-    { $set: { "notifications.$.read": true } }
-  );
-  res.json({ ok: true });
-};
-
-// async function getFilterOptions(req, res) {
-//   try {
-//     const db = getDb();
-
-//     // 1️⃣  department‑>employeeId map
-//     const deptPipeline = [
-//       {
-//         $group: {
-//           _id: "$BP.deptName",
-//           employeeIds: { $addToSet: "$BP.employeeId" },
-//         },
-//       },
-//       {
-//         $project: {
-//           _id: 0,
-//           deptName: "$_id",
-//           employeeIds: 1,
-//         },
-//       },
-//       { $sort: { deptName: 1 } },
-//     ];
-//     const departments = await db.collection("Assets").aggregate(deptPipeline).toArray();
-
-//     // 2️⃣  distinct data‑centre list
-//     const dataCentres = await db
-//       .collection("Assets")
-//       .distinct("Infra.dataCentre", { "Infra.dataCentre": { $ne: null } });
-
-//     res.status(200).json({ departments, dataCentres });
-//   } catch (err) {
-//     console.error("getFilterOptions:", err);
-//     res.status(500).json({ error: "Failed to fetch filter options", details: err.message });
-//   }
+//   res.json(user?.notifications || []);
 // }
 
-// /**
-//  * GET /assets/by-employee/:employeeId
-//  * Returns *all* projects for a given BP.employeeId.
-//  */
-// async function getProjectsByEmployeeId(req, res) {
-//   try {
-//     const db = getDb();
-//     const { employeeId } = req.params;
-//     if (!employeeId) return res.status(400).json({ error: "employeeId is required" });
 
-//     const projects = await db
-//       .collection("Assets")
-//       .find({ "BP.employeeId": employeeId }, { projection: { _id: 0 } })
-//       .toArray();
 
-//     if (!projects.length) return res.status(404).json({ error: "No projects found" });
 
-//     res.status(200).json(projects);
-//   } catch (err) {
-//     console.error("getProjectsByEmployeeId:", err);
-//     res.status(500).json({ error: "Failed to fetch projects", details: err.message });
-//   }
-// }
-
-// /**
-//  * GET /assets/by-datacentre/:dataCentre
-//  * Returns *all* projects for a given Infra.dataCentre.
-//  */
-// async function getProjectsByDataCentre(req, res) {
-//   try {
-//     const db = getDb();
-//     const { dataCentre } = req.params;
-//     if (!dataCentre) return res.status(400).json({ error: "dataCentre is required" });
-
-//     const projects = await db
-//       .collection("Assets")
-//       .find({ "Infra.dataCentre": dataCentre }, { projection: { _id: 0 } })
-//       .toArray();
-
-//     if (!projects.length) return res.status(404).json({ error: "No projects found" });
-
-//     res.status(200).json(projects);
-//   } catch (err) {
-//     console.error("getProjectsByDataCentre:", err);
-//     res.status(500).json({ error: "Failed to fetch projects", details: err.message });
-//   }
-// }
 
 async function filterByDepartment (req, res) {
   try {
@@ -1193,14 +1090,16 @@ module.exports = {
   getProjectDetailsByName,
   getDashboardByType,
   updateAssetByProjectName,
-  getExpiringCertNotifications,
-  markNotificationRead,
-  getLatestNotifications,
-  getAllNotifications,
-  getExpiringCertsByEmployeeId,
+  // getExpiringCertNotifications,
+  // markNotificationRead,
+  // getLatestNotifications,
+  // getAllNotifications,
+  // getExpiringCertsByEmployeeId,
   filterByDepartment,
   filterByDataCenter,
-  filterByPrismId
+  filterByPrismId,
+  // getExpiringCertByAssetsId,
+  getExpiringCertsByEmployeeId
 
   // getAssetByProjectName, // Make sure this exists!
   // getAllProjects         // Make sure this exists!

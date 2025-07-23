@@ -27,10 +27,8 @@ router.put('/assets/update/ts/:assetsId', AssetsController.updateTS);
 router.get('/assets/datacentre/:dataCentre', AssetsController.getAssetsByDataCentre);
 router.get('/assets/by-department/:deptName', AssetsController.getAssetsByDepartment);
 router.get('/dashboard/expiring/:employeeId', AssetsController.getExpiringCertsByEmployeeId);
-router.get('/notifications/expiring-certificates', AssetsController.getExpiringCertNotifications);
-router.get("/notifications/latest", AssetsController.getLatestNotifications);
-router.get("/notifications/all", AssetsController.getAllNotifications);
-router.post("/notifications/:id/read", AssetsController.markNotificationRead);
+// router.get('/notifications/expiring-certificates', AssetsController.getExpiringCertNotifications);
+// router.get("/notifications/expiring-certificates/:assetsId", AssetsController.getExpiringCertByAssetsId);
 
 
 
