@@ -3,8 +3,6 @@ const { getDb } = require("../Db/Db");
 const moment = require("moment");
 const { ObjectId } = require("mongodb");
 
-
-
 async function createAsset(req, res) {
   try {
     // Parse the JSON strings from multipart/form-data
@@ -28,7 +26,6 @@ async function createAsset(req, res) {
   }
 }
 
-
 async function getAsset(req, res) {
   try {
     const { assetsId } = req.params;
@@ -49,8 +46,6 @@ async function getAsset(req, res) {
   }
 }
 
-
-
 async function deleteAsset(req, res) {
   try {
     const { assetsId } = req.params;
@@ -66,7 +61,6 @@ async function deleteAsset(req, res) {
     res.status(500).json({ error: "Failed to delete asset" });
   }
 }
-
 
 // Update BP section
 async function updateBP(req, res) {
@@ -99,12 +93,10 @@ async function updateBP(req, res) {
         },
       }
     );
-    res
-      .status(200)
-      .json({
-        message: "BP section updated",
-        modifiedCount: result.modifiedCount,
-      });
+    res.status(200).json({
+      message: "BP section updated",
+      modifiedCount: result.modifiedCount,
+    });
   } catch (err) {
     res.status(500).json({ error: "Update BP failed", details: err.message });
   }
@@ -130,12 +122,10 @@ async function updateSA(req, res) {
         },
       }
     );
-    res
-      .status(200)
-      .json({
-        message: "SA section updated",
-        modifiedCount: result.modifiedCount,
-      });
+    res.status(200).json({
+      message: "SA section updated",
+      modifiedCount: result.modifiedCount,
+    });
   } catch (err) {
     res.status(500).json({ error: "Update SA failed", details: err.message });
   }
@@ -164,12 +154,10 @@ async function updateInfra(req, res) {
         },
       }
     );
-    res
-      .status(200)
-      .json({
-        message: "Infra section updated",
-        modifiedCount: result.modifiedCount,
-      });
+    res.status(200).json({
+      message: "Infra section updated",
+      modifiedCount: result.modifiedCount,
+    });
   } catch (err) {
     res
       .status(500)
@@ -194,12 +182,10 @@ async function updateTS(req, res) {
         },
       }
     );
-    res
-      .status(200)
-      .json({
-        message: "TS section updated",
-        modifiedCount: result.modifiedCount,
-      });
+    res.status(200).json({
+      message: "TS section updated",
+      modifiedCount: result.modifiedCount,
+    });
   } catch (err) {
     res.status(500).json({ error: "Update TS failed", details: err.message });
   }
@@ -281,19 +267,17 @@ async function getAssetsByDepartment(req, res) {
     res.status(200).json(modifiedAssets);
   } catch (err) {
     console.error(err);
-    res
-      .status(500)
-      .json({
-        error: "Failed to fetch assets by department",
-        details: err.message,
-      });
+    res.status(500).json({
+      error: "Failed to fetch assets by department",
+      details: err.message,
+    });
   }
 }
 
 async function getDashboardAllProjectBySIO(req, res) {
   try {
     const db = getDb();
-    
+
     const pipeline = [
       {
         $project: {
@@ -303,14 +287,14 @@ async function getDashboardAllProjectBySIO(req, res) {
           HOD: "$BP.HOD",
           deptName: "$BP.deptName",
           projectName: "$BP.name",
-          securityAudits: "$SA.securityAudit"
-        }
+          securityAudits: "$SA.securityAudit",
+        },
       },
       {
         $unwind: {
           path: "$securityAudits",
-          preserveNullAndEmptyArrays: true
-        }
+          preserveNullAndEmptyArrays: true,
+        },
       },
       {
         $project: {
@@ -322,35 +306,36 @@ async function getDashboardAllProjectBySIO(req, res) {
           auditDate: "$securityAudits.auditDate",
           expireDate: "$securityAudits.expireDate",
           tlsNextExpiry: "$securityAudits.tlsNextExpiry",
-          sslLabScore: "$securityAudits.sslLabScore"
-        }
+          sslLabScore: "$securityAudits.sslLabScore",
+        },
       },
       {
         $sort: {
-          expireDate: 1
-        }
-      }
+          expireDate: 1,
+        },
+      },
     ];
 
-    const dashboardData = await db.collection("Assets").aggregate(pipeline).toArray();
+    const dashboardData = await db
+      .collection("Assets")
+      .aggregate(pipeline)
+      .toArray();
 
     if (!dashboardData.length) {
-      return res.status(404).json({ 
-        error: "No projects found for dashboard" 
+      return res.status(404).json({
+        error: "No projects found for dashboard",
       });
     }
 
     res.status(200).json(dashboardData);
-
   } catch (err) {
     console.error("Error in getDashboardAllProjectBySIO:", err);
-    res.status(500).json({ 
-      error: "Failed to fetch dashboard data", 
-      details: err.message 
+    res.status(500).json({
+      error: "Failed to fetch dashboard data",
+      details: err.message,
     });
   }
 }
-
 
 async function getProjectDetailsByName(req, res) {
   try {
@@ -371,8 +356,8 @@ async function getProjectDetailsByName(req, res) {
           SA: 1,
           Infra: 1,
           TS: 1,
-          createdAt: 1
-        }
+          createdAt: 1,
+        },
       }
     );
 
@@ -391,10 +376,10 @@ async function getProjectDetailsByName(req, res) {
         publicIp: project.BP.publicIp,
         HOD: project.BP.HOD,
         nodalOfficerNIC: project.BP.nodalOfficerNIC || null,
-        nodalOfficerDept: project.BP.nodalOfficerDept || null
+        nodalOfficerDept: project.BP.nodalOfficerDept || null,
       },
       SA: {
-        securityAudit: project.SA.securityAudit || []
+        securityAudit: project.SA.securityAudit || [],
       },
       Infra: {
         typeOfServer: project.Infra.typeOfServer || null,
@@ -403,7 +388,7 @@ async function getProjectDetailsByName(req, res) {
         dataCentre: project.Infra.dataCentre || null,
         gitUrls: project.Infra.gitUrls || [],
         vaRecords: project.Infra.vaRecords || [],
-        additionalInfra: project.Infra.additionalInfra || []
+        additionalInfra: project.Infra.additionalInfra || [],
       },
       TS: {
         frontend: project.TS.frontend || [],
@@ -411,25 +396,20 @@ async function getProjectDetailsByName(req, res) {
         database: project.TS.database || [],
         os: project.TS.os || [],
         osVersion: project.TS.osVersion || [],
-        repoUrls: project.TS.repoUrls || []
+        repoUrls: project.TS.repoUrls || [],
       },
-      createdAt: project.createdAt
+      createdAt: project.createdAt,
     };
 
     res.status(200).json(response);
   } catch (error) {
     console.error("Error in getProjectDetailsByName:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: "Failed to fetch project details",
-      details: error.message 
+      details: error.message,
     });
   }
 }
-
-
-
-
-
 
 //  async function getDashboardByType(req, res) {
 //   try {
@@ -449,7 +429,7 @@ async function getProjectDetailsByName(req, res) {
 //       // matchStage = { "BP.employeeId": employeeId };
 //     } else if (employeeType === "HOD" && /^HODNIC-\d+$/.test(employeeId)) {
 //       matchStage = { "BP.employeeId": employeeId };
-//     } 
+//     }
 //      else {
 //       return res.status(403).json({ error: "Unauthorized" });
 //     }
@@ -509,12 +489,16 @@ async function getProjectDetailsByName(req, res) {
 async function getDashboardByType(req, res) {
   try {
     const db = getDb();
-    const employeeId = req.params.employeeId || (req.user && req.user.employeeId);
-    const employeeType = req.query.employeeType || (req.user && req.user.employeeType);
+    const employeeId =
+      req.params.employeeId || (req.user && req.user.employeeId);
+    const employeeType =
+      req.query.employeeType || (req.user && req.user.employeeType);
     const name = req.query.name || (req.user && req.user.name);
 
     if (!employeeId || !employeeType) {
-      return res.status(400).json({ error: "employeeId and employeeType are required" });
+      return res
+        .status(400)
+        .json({ error: "employeeId and employeeType are required" });
     }
 
     let matchStage = {};
@@ -529,94 +513,406 @@ async function getDashboardByType(req, res) {
     //   return res.status(403).json({ error: "Unauthorized" });
     // }
 
-//     if (employeeType === "Admin" && /^ADMINNIC-\d+$/.test(employeeId)) {
-//   matchStage = {}; // Admin sees everything
-// } else if (employeeType === "HOD" && /^HODNIC-\d+$/.test(employeeId)) {
-//   matchStage = { "BP.employeeId": employeeId };
-// } else if (employeeType === "PM" && /^\d+$/.test(employeeId)) {
-//   matchStage = { "BP.nodalOfficerNIC.empCode": `${employeeId}` }; 
-// } else {
-//   return res.status(403).json({ error: "Unauthorized: Invalid employeeId or employeeType" });
-// }
+    //     if (employeeType === "Admin" && /^ADMINNIC-\d+$/.test(employeeId)) {
+    //   matchStage = {}; // Admin sees everything
+    // } else if (employeeType === "HOD" && /^HODNIC-\d+$/.test(employeeId)) {
+    //   matchStage = { "BP.employeeId": employeeId };
+    // } else if (employeeType === "PM" && /^\d+$/.test(employeeId)) {
+    //   matchStage = { "BP.nodalOfficerNIC.empCode": `${employeeId}` };
+    // } else {
+    //   return res.status(403).json({ error: "Unauthorized: Invalid employeeId or employeeType" });
+    // }
 
-if (employeeType === "Admin" && /^\d{4}$/.test(employeeId)) {
-  matchStage = {}; // Admin sees everything
-} else if (employeeType === "HOD" && /^\d{4}$/.test(employeeId)) {
-  matchStage = { "BP.employeeId": employeeId };
-} else if (employeeType === "PM" && /^\d{4}$/.test(employeeId)) {
-  matchStage = { "BP.nodalOfficerNIC.empCode": employeeId }; 
-} else {
-  return res.status(403).json({ error: "Unauthorized: Invalid employeeId or employeeType" });
-}
+    if (employeeType === "Admin" && /^\d{4}$/.test(employeeId)) {
+      matchStage = {}; // Admin sees everything
+    } else if (employeeType === "HOD" && /^\d{4}$/.test(employeeId)) {
+      matchStage = { "BP.employeeId": employeeId };
+    } else if (employeeType === "PM" && /^\d{4}$/.test(employeeId)) {
+      matchStage = { "BP.nodalOfficerNIC.empCode": employeeId };
+    } else {
+      return res
+        .status(403)
+        .json({ error: "Unauthorized: Invalid employeeId or employeeType" });
+    }
+
+    // const pipeline = [
+    //   { $match: matchStage },
+    //   {
+    //     $project: {
+    //       _id: 0,
+    //       assetsId: 1,
+    //       projectName: "$BP.name",
+    //       prismId: "$BP.prismId",
+    //       deptName: "$BP.deptName",
+    //       HOD: "$BP.HOD",
+    //       employeeId: "$BP.employeeId",
+    //       securityAudits: "$SA.securityAudit",
+    //       dataCentre: "$Infra.dataCentre",
+    //       createdAt: 1
+    //     }
+    //   },
+    //   { $unwind: { path: "$securityAudits", preserveNullAndEmptyArrays: true } },
+    //   {
+    //     $project: {
+    //       assetsId: 1,
+    //       projectName: 1,
+    //       prismId: 1,
+    //       deptName: 1,
+    //       HOD: 1,
+    //       employeeId: 1,
+    //       auditDate: "$securityAudits.auditDate",
+    //       expireDate: "$securityAudits.expireDate",
+    //       tlsNextExpiry: "$securityAudits.tlsNextExpiry",
+    //       sslLabScore: "$securityAudits.sslLabScore",
+    //       certificate: "$securityAudits.certificate",
+    //       auditStatus: "$securityAudits.auditStatus",
+    //       sslStatus: "$securityAudits.sslStatus",
+    //       dataCentre: 1,
+    //       createdAt: 1
+    //     }
+    //   },
+    //   { $sort: { expireDate: 1 } }
+    // ];
+
+    // const pipeline = [
+    //   { $match: matchStage },
+
+    //   {
+    //     $project: {
+    //       _id: 0,
+    //       assetsId: 1,
+    //       projectName: "$BP.name",
+    //       prismId: "$BP.prismId",
+    //       deptName: "$BP.deptName",
+    //       HOD: "$BP.HOD",
+    //       employeeId: "$BP.employeeId",
+    //       securityAudits: "$SA.securityAudit",
+    //       dataCentre: "$Infra.dataCentre",
+    //       createdAt: 1,
+    //     },
+    //   },
+
+    //   // Flatten security audits
+    //   {
+    //     $unwind: { path: "$securityAudits", preserveNullAndEmptyArrays: true },
+    //   },
+
+    //   // Extract relevant fields including audit data
+    //   {
+    //     $project: {
+    //       assetsId: 1,
+    //       projectName: 1,
+    //       prismId: 1,
+    //       deptName: 1,
+    //       HOD: 1,
+    //       employeeId: 1,
+    //       auditDate: "$securityAudits.auditDate",
+    //       expireDate: "$securityAudits.expireDate",
+    //       tlsNextExpiry: "$securityAudits.tlsNextExpiry",
+    //       sslLabScore: "$securityAudits.sslLabScore",
+    //       certificate: "$securityAudits.certificate",
+    //       auditStatus: "$securityAudits.auditStatus",
+    //       sslStatus: "$securityAudits.sslStatus",
+    //       dataCentre: 1,
+    //       createdAt: 1,
+    //     },
+    //   },
+
+    //   // Sort by assetsId and latest auditDate descending
+    //   { $sort: { assetsId: 1, auditDate: -1 } },
+
+    //   // Get only the latest audit per assetsId
+    //   {
+    //     $group: {
+    //       _id: "$assetsId",
+    //       assetsId: { $first: "$assetsId" },
+    //       projectName: { $first: "$projectName" },
+    //       prismId: { $first: "$prismId" },
+    //       deptName: { $first: "$deptName" },
+    //       HOD: { $first: "$HOD" },
+    //       employeeId: { $first: "$employeeId" },
+    //       auditDate: { $first: "$auditDate" },
+    //       expireDate: { $first: "$expireDate" },
+    //       tlsNextExpiry: { $first: "$tlsNextExpiry" },
+    //       sslLabScore: { $first: "$sslLabScore" },
+    //       certificate: { $first: "$certificate" },
+    //       auditStatus: { $first: "$auditStatus" },
+    //       sslStatus: { $first: "$sslStatus" },
+    //       dataCentre: { $first: "$dataCentre" },
+    //       createdAt: { $first: "$createdAt" },
+    //     },
+    //   },
+
+    //   // Optional: sort by expireDate if needed
+    //   { $sort: { expireDate: 1 } },
+    // ];
+
+//     const pipeline = [
+//   // 1. Filter by user role or other criteria
+//   { $match: matchStage },
+
+//   // 2. Extract only needed fields
+//   {
+//     $project: {
+//       _id: 0,
+//       assetsId: 1,
+//       projectName: "$BP.name",
+//       prismId: "$BP.prismId",
+//       deptName: "$BP.deptName",
+//       HOD: "$BP.HOD",
+//       employeeId: "$BP.employeeId",
+//       securityAudits: "$SA.securityAudit",
+//       dataCentre: "$Infra.dataCentre",
+//       createdAt: 1
+//     }
+//   },
+
+//   // 3. Flatten the `securityAudit` array
+//   {
+//     $unwind: {
+//       path: "$securityAudits",
+//       preserveNullAndEmptyArrays: true
+//     }
+//   },
+
+//   // 4. Pick audit fields into root-level for sorting
+//   {
+//     $project: {
+//       assetsId: 1,
+//       projectName: 1,
+//       prismId: 1,
+//       deptName: 1,
+//       HOD: 1,
+//       employeeId: 1,
+//       auditDate: "$securityAudits.auditDate",
+//       expireDate: "$securityAudits.expireDate",
+//       tlsNextExpiry: "$securityAudits.tlsNextExpiry",
+//       sslLabScore: "$securityAudits.sslLabScore",
+//       certificate: "$securityAudits.certificate",
+//       auditStatus: "$securityAudits.auditStatus",
+//       sslStatus: "$securityAudits.sslStatus",
+//       dataCentre: 1,
+//       createdAt: 1
+//     }
+//   },
+
+//   // 5. Sort by assetsId + auditDate descending to bring latest first
+//   {
+//     $sort: {
+//       assetsId: 1,
+//       auditDate: -1
+//     }
+//   },
+
+//   // 6. Group to pick the latest audit per assetsId
+//   {
+//     $group: {
+//       _id: "$assetsId",
+//       assetsId: { $first: "$assetsId" },
+//       projectName: { $first: "$projectName" },
+//       prismId: { $first: "$prismId" },
+//       deptName: { $first: "$deptName" },
+//       HOD: { $first: "$HOD" },
+//       employeeId: { $first: "$employeeId" },
+//       auditDate: { $first: "$auditDate" },
+//       expireDate: { $first: "$expireDate" },
+//       tlsNextExpiry: { $first: "$tlsNextExpiry" },
+//       sslLabScore: { $first: "$sslLabScore" },
+//       certificate: { $first: "$certificate" },
+//       auditStatus: { $first: "$auditStatus" },
+//       sslStatus: { $first: "$sslStatus" },
+//       dataCentre: { $first: "$dataCentre" },
+//       createdAt: { $first: "$createdAt" }
+//     }
+//   },
+
+//   // 7. Final sort if needed (optional)
+//   {
+//     $sort: { expireDate: 1 }
+//   }
+// ];
+
+
+const pipeline = [
+  // Match documents based on role
+  { $match: matchStage },
+
+  // Unwind each securityAudit entry into a flat document
+  {
+    $unwind: {
+      path: "$SA.securityAudit",
+      preserveNullAndEmptyArrays: false
+    }
+  },
+
+  // Project necessary fields, include both dates
+  {
+    $project: {
+      _id: 0,
+      assetsId: 1,
+      projectName: "$BP.name",
+      prismId: "$BP.prismId",
+      deptName: "$BP.deptName",
+      HOD: "$BP.HOD",
+      employeeId: "$BP.employeeId",
+      auditDate: "$SA.securityAudit.auditDate",
+      expireDate: "$SA.securityAudit.expireDate",
+      tlsNextExpiry: "$SA.securityAudit.tlsNextExpiry",
+      sslLabScore: "$SA.securityAudit.sslLabScore",
+      certificate: "$SA.securityAudit.certificate",
+      auditStatus: "$SA.securityAudit.auditStatus",
+      sslStatus: "$SA.securityAudit.sslStatus",
+      dataCentre: "$Infra.dataCentre",
+      createdAt: 1
+    }
+  },
+
+  // Sort audits so the most recent audit appears first
+  {
+    $sort: {
+      assetsId: 1,
+      auditDate: -1,
+      expireDate: -1  // tie-breaker if auditDate is same
+    }
+  },
+
+  // Group by asset, keeping the first (latest) audit
+  {
+    $group: {
+      _id: "$assetsId",
+      assetsId: { $first: "$assetsId" },
+      projectName: { $first: "$projectName" },
+      prismId: { $first: "$prismId" },
+      deptName: { $first: "$deptName" },
+      HOD: { $first: "$HOD" },
+      employeeId: { $first: "$employeeId" },
+      auditDate: { $first: "$auditDate" },
+      expireDate: { $first: "$expireDate" },
+      tlsNextExpiry: { $first: "$tlsNextExpiry" },
+      sslLabScore: { $first: "$sslLabScore" },
+      certificate: { $first: "$certificate" },
+      auditStatus: { $first: "$auditStatus" },
+      sslStatus: { $first: "$sslStatus" },
+      dataCentre: { $first: "$dataCentre" },
+      createdAt: { $first: "$createdAt" }
+    }
+  },
+
+  // Optional: Sort final output by expiry if desired
+  { $sort: { expireDate: -1 } }
+];
 
 
 
-    const pipeline = [
-      { $match: matchStage },
-      {
-        $project: {
-          _id: 0,
-          assetsId: 1,
-          projectName: "$BP.name",
-          prismId: "$BP.prismId",
-          deptName: "$BP.deptName",
-          HOD: "$BP.HOD",
-          employeeId: "$BP.employeeId",
-          securityAudits: "$SA.securityAudit",
-          dataCentre: "$Infra.dataCentre",
-          createdAt: 1
-        }
-      },
-      { $unwind: { path: "$securityAudits", preserveNullAndEmptyArrays: true } },
-      {
-        $project: {
-          assetsId: 1,
-          projectName: 1,
-          prismId: 1,
-          deptName: 1,
-          HOD: 1,
-          employeeId: 1,
-          auditDate: "$securityAudits.auditDate",
-          expireDate: "$securityAudits.expireDate",
-          tlsNextExpiry: "$securityAudits.tlsNextExpiry",
-          sslLabScore: "$securityAudits.sslLabScore",
-          certificate: "$securityAudits.certificate",
-          auditStatus: "$securityAudits.auditStatus",
-          sslStatus: "$securityAudits.sslStatus",
-          dataCentre: 1,
-          createdAt: 1
-        }
-      },
-      { $sort: { expireDate: 1 } }
-    ];
-
-    const dashboardData = await db.collection("Assets").aggregate(pipeline).toArray();
+    const dashboardData = await db
+      .collection("Assets")
+      .aggregate(pipeline)
+      .toArray();
 
     res.status(200).json(dashboardData);
   } catch (err) {
     console.error("Error in getDashboardByType:", err);
-    res.status(500).json({ error: "Failed to fetch dashboard data", details: err.message });
+    res
+      .status(500)
+      .json({ error: "Failed to fetch dashboard data", details: err.message });
   }
 }
 
+// async function updateAssetByProjectName(req, res) {
+//   try {
+//     const { projectName } = req.params;
+//     if (!projectName) {
+//       return res.status(400).json({ error: "Project name is required" });
+//     }
+
+//     const BP = JSON.parse(req.body.BP);
+//     const SA = JSON.parse(req.body.SA);
+//     const TS = JSON.parse(req.body.TS);
+//     const Infra = JSON.parse(req.body.Infra);
+
+//     if (req.file) {
+//       SA.certificate = req.file.originalname;
+//     }
+
+
+
+//     const db = getDb();
+//     const result = await db.collection("Assets").updateOne(
+//       { "BP.name": { $regex: new RegExp(`^${projectName}$`, "i") } },
+//       {
+//         $set: {
+//           BP,
+//           SA,
+//           TS,
+//           Infra,
+//           certificate: req.file || null,
+//         },
+//       }
+//     );
+
+//     if (result.matchedCount === 0) {
+//       return res
+//         .status(404)
+//         .json({ error: "Asset not found for this project name" });
+//     }
+
+//     res
+//       .status(200)
+//       .json({
+//         message: "Asset updated successfully",
+//         modifiedCount: result.modifiedCount,
+//       });
+//   } catch (err) {
+//     console.error("Error in updateAssetByProjectName:", err);
+//     res
+//       .status(500)
+//       .json({ error: "Error updating asset", details: err.message });
+//   }
+// }
 
 async function updateAssetByProjectName(req, res) {
   try {
     const { projectName } = req.params;
+    console.log("🔍 Project Name Received:", projectName);
+
     if (!projectName) {
       return res.status(400).json({ error: "Project name is required" });
     }
 
+    // Parse incoming fields
     const BP = JSON.parse(req.body.BP);
     const SA = JSON.parse(req.body.SA);
     const TS = JSON.parse(req.body.TS);
     const Infra = JSON.parse(req.body.Infra);
 
-    if (req.file) {
-      SA.certificate = req.file.originalname;
+    console.log("📦 Parsed BP:", BP);
+    console.log("📦 Parsed SA (before array check):", SA);
+    console.log("📦 Parsed TS:", TS);
+    console.log("📦 Parsed Infra:", Infra);
+
+    // Ensure SA.securityAudit is an array
+    if (SA && SA.securityAudit && !Array.isArray(SA.securityAudit)) {
+      SA.securityAudit = [SA.securityAudit];
+      console.log("✅ Converted SA.securityAudit to array");
+    }
+
+    // Handle certificate file upload
+    if (req.file && SA.securityAudit?.length > 0) {
+      SA.securityAudit[0].certificate = req.file.originalname;
+      console.log("📎 Uploaded file attached to securityAudit[0]:", req.file.originalname);
     }
 
     const db = getDb();
+
+    // Log final update object
+    console.log("📤 Final Update Payload:", {
+      BP,
+      SA,
+      TS,
+      Infra
+    });
+
+    // Update document in DB
     const result = await db.collection("Assets").updateOne(
       { "BP.name": { $regex: new RegExp(`^${projectName}$`, "i") } },
       {
@@ -624,22 +920,28 @@ async function updateAssetByProjectName(req, res) {
           BP,
           SA,
           TS,
-          Infra,
-          certificate: req.file || null,
+          Infra
         }
       }
     );
+
+    console.log("📊 Update Result:", result);
 
     if (result.matchedCount === 0) {
       return res.status(404).json({ error: "Asset not found for this project name" });
     }
 
-    res.status(200).json({ message: "Asset updated successfully", modifiedCount: result.modifiedCount });
+    res.status(200).json({
+      message: "Asset updated successfully",
+      modifiedCount: result.modifiedCount,
+    });
   } catch (err) {
-    console.error("Error in updateAssetByProjectName:", err);
+    console.error("❌ Error in updateAssetByProjectName:", err);
     res.status(500).json({ error: "Error updating asset", details: err.message });
   }
 }
+
+
 
 async function getExpiringCertNotifications(req, res) {
   const db = getDb();
@@ -671,7 +973,9 @@ async function getExpiringCertNotifications(req, res) {
             employeeId: empId,
             daysLeft,
             expireDate: moment(expiry).format("DD-MMM-YYYY"),
-            message: `SSL/TLS certificate will expire on ${moment(expiry).format("DD-MMM-YYYY")}`,
+            message: `SSL/TLS certificate will expire on ${moment(
+              expiry
+            ).format("DD-MMM-YYYY")}`,
           });
         }
       }
@@ -680,8 +984,8 @@ async function getExpiringCertNotifications(req, res) {
     res.status(200).json({ notifications });
   } catch (err) {
     console.error("Notification Fetch Error:", err);
-    res.status(500).json({ error: "Failed to fetch notifications"});
-  }
+    res.status(500).json({ error: "Failed to fetch notifications" });
+  }
 }
 
 // GET notifications about expiring certificates
@@ -715,7 +1019,9 @@ async function getExpiringCertNotifications(req, res) {
             employeeId: empId,
             daysLeft,
             expireDate: moment(expiry).format("DD-MMM-YYYY"),
-            message: `SSL/TLS certificate will expire on ${moment(expiry).format("DD-MMM-YYYY")}`,
+            message: `SSL/TLS certificate will expire on ${moment(
+              expiry
+            ).format("DD-MMM-YYYY")}`,
           });
         }
       }
@@ -788,7 +1094,6 @@ async function getExpiringCertNotifications(req, res) {
 //   }
 // }
 
-
 async function getExpiringCertsByEmployeeId(req, res) {
   try {
     const db = getDb();
@@ -814,7 +1119,7 @@ async function getExpiringCertsByEmployeeId(req, res) {
             projectName: asset.BP.name,
             prismId: asset.BP.prismId,
             expiry,
-            daysLeft
+            daysLeft,
           });
         }
       });
@@ -823,10 +1128,11 @@ async function getExpiringCertsByEmployeeId(req, res) {
     res.json({ employeeId, total: expiring.length, expiring });
   } catch (err) {
     console.error("getExpiringCertsByEmployeeId:", err);
-    res.status(500).json({ error: "Failed to fetch expiry data", details: err.message });
+    res
+      .status(500)
+      .json({ error: "Failed to fetch expiry data", details: err.message });
   }
 }
-
 
 async function getLatestNotifications(req, res) {
   const sessionUser = req.session.user;
@@ -837,20 +1143,17 @@ async function getLatestNotifications(req, res) {
   const db = getDb();
   const { employeeId } = sessionUser;
 
-  const user = await db.collection("Users").findOne(
-    { employeeId },
-    { projection: { notifications: 1 } }
-  );
+  const user = await db
+    .collection("Users")
+    .findOne({ employeeId }, { projection: { notifications: 1 } });
 
   const latest = (user?.notifications || [])
-    .filter(n => !n.read)
+    .filter((n) => !n.read)
     .sort((a, b) => b.createdAt - a.createdAt)
     .slice(0, 5);
 
   res.json(latest);
 }
-
-
 
 // GET all notifications
 async function getAllNotifications(req, res) {
@@ -868,14 +1171,16 @@ async function getAllNotifications(req, res) {
 async function markNotificationRead(req, res) {
   const db = getDb();
   const { employeeId } = req.session.user;
-  const { id } = req.params;                 // notification _id
+  const { id } = req.params; // notification _id
 
-  await db.collection("Users").updateOne(
-    { employeeId, "notifications._id": ObjectId(id) },
-    { $set: { "notifications.$.read": true } }
-  );
+  await db
+    .collection("Users")
+    .updateOne(
+      { employeeId, "notifications._id": ObjectId(id) },
+      { $set: { "notifications.$.read": true } }
+    );
   res.json({ ok: true });
-};
+}
 
 // async function getFilterOptions(req, res) {
 //   try {
@@ -960,7 +1265,7 @@ async function markNotificationRead(req, res) {
 //   }
 // }
 
-async function filterByDepartment (req, res) {
+async function filterByDepartment(req, res) {
   try {
     const deptName = req.params.deptName;
     if (!deptName) {
@@ -971,17 +1276,21 @@ async function filterByDepartment (req, res) {
     const data = await getFilteredDashboard(matchStage);
 
     if (!data.length) {
-      return res.status(404).json({ error: "No assets found for this department" });
+      return res
+        .status(404)
+        .json({ error: "No assets found for this department" });
     }
 
     res.status(200).json(data);
   } catch (error) {
     console.error("filterByDepartment error:", error);
-    res.status(500).json({ error: "Internal Server Error", details: error.message });
+    res
+      .status(500)
+      .json({ error: "Internal Server Error", details: error.message });
   }
-};
+}
 
-async function filterByDataCenter (req, res) {
+async function filterByDataCenter(req, res) {
   try {
     const dataCenter = req.params.dataCenter;
     if (!dataCenter) {
@@ -992,15 +1301,19 @@ async function filterByDataCenter (req, res) {
     const data = await getFilteredDashboard(matchStage);
 
     if (!data.length) {
-      return res.status(404).json({ error: "No assets found for this data center" });
+      return res
+        .status(404)
+        .json({ error: "No assets found for this data center" });
     }
 
     res.status(200).json(data);
   } catch (error) {
     console.error("filterByDataCenter error:", error);
-    res.status(500).json({ error: "Internal Server Error", details: error.message });
+    res
+      .status(500)
+      .json({ error: "Internal Server Error", details: error.message });
   }
-};
+}
 
 async function getFilteredDashboard(matchStage) {
   const db = getDb();
@@ -1018,8 +1331,8 @@ async function getFilteredDashboard(matchStage) {
         employeeId: "$BP.employeeId",
         securityAudits: "$SA.securityAudit",
         dataCentre: "$Infra.dataCentre",
-        createdAt: 1
-      }
+        createdAt: 1,
+      },
     },
     { $unwind: { path: "$securityAudits", preserveNullAndEmptyArrays: true } },
     {
@@ -1038,124 +1351,16 @@ async function getFilteredDashboard(matchStage) {
         auditStatus: "$securityAudits.auditStatus",
         sslStatus: "$securityAudits.sslStatus",
         dataCentre: 1,
-        createdAt: 1
-      }
+        createdAt: 1,
+      },
     },
-    { $sort: { expireDate: 1 } }
-  ];
-
-  return db.collection("Assets").aggregate(pipeline).toArray();
-};
-
-async function filterByPrismId  (req, res) {
-  try {
-    const prismId = req.params.prismId;
-    if (!prismId) {
-      return res.status(400).json({ error: "Prism ID is required" });
-    }
-
-    const matchStage = { "BP.prismId": prismId };
-    const data = await getFilteredDashboard(matchStage);
-
-    if (!data.length) {
-      return res.status(404).json({ error: "No assets found for this Prism ID" });
-    }
-
-    res.status(200).json(data);
-  } catch (error) {
-    console.error("filterByPrismId error:", error);
-    res.status(500).json({ error: "Internal Server Error", details: error.message });
-  }
-};
-
-async function filterByDepartment (req, res) {
-  try {
-    const deptName = req.params.deptName;
-    if (!deptName) {
-      return res.status(400).json({ error: "Department name is required" });
-    }
-
-    const matchStage = { "BP.deptName": deptName };
-    const data = await getFilteredDashboard(matchStage);
-
-    if (!data.length) {
-      return res.status(404).json({ error: "No assets found for this department" });
-    }
-
-    res.status(200).json(data);
-  } catch (error) {
-    console.error("filterByDepartment error:", error);
-    res.status(500).json({ error: "Internal Server Error", details: error.message });
-  }
-};
-
-async function filterByDataCenter (req, res) {
-  try {
-    const dataCenter = req.params.dataCenter;
-    if (!dataCenter) {
-      return res.status(400).json({ error: "Data center name is required" });
-    }
-
-    const matchStage = { "Infra.dataCentre": dataCenter };
-    const data = await getFilteredDashboard(matchStage);
-
-    if (!data.length) {
-      return res.status(404).json({ error: "No assets found for this data center" });
-    }
-
-    res.status(200).json(data);
-  } catch (error) {
-    console.error("filterByDataCenter error:", error);
-    res.status(500).json({ error: "Internal Server Error", details: error.message });
-  }
-};
-
-async function getFilteredDashboard(matchStage) {
-  const db = getDb();
-
-  const pipeline = [
-    { $match: matchStage },
-    {
-      $project: {
-        _id: 0,
-        assetsId: 1,
-        projectName: "$BP.name",
-        prismId: "$BP.prismId",
-        deptName: "$BP.deptName",
-        HOD: "$BP.HOD",
-        employeeId: "$BP.employeeId",
-        securityAudits: "$SA.securityAudit",
-        dataCentre: "$Infra.dataCentre",
-        createdAt: 1
-      }
-    },
-    { $unwind: { path: "$securityAudits", preserveNullAndEmptyArrays: true } },
-    {
-      $project: {
-        assetsId: 1,
-        projectName: 1,
-        prismId: 1,
-        deptName: 1,
-        HOD: 1,
-        employeeId: 1,
-        auditDate: "$securityAudits.auditDate",
-        expireDate: "$securityAudits.expireDate",
-        tlsNextExpiry: "$securityAudits.tlsNextExpiry",
-        sslLabScore: "$securityAudits.sslLabScore",
-        certificate: "$securityAudits.certificate",
-        auditStatus: "$securityAudits.auditStatus",
-        sslStatus: "$securityAudits.sslStatus",
-        dataCentre: 1,
-        createdAt: 1
-      }
-    },
-    { $sort: { expireDate: 1 } }
+    { $sort: { expireDate: 1 } },
   ];
 
   return db.collection("Assets").aggregate(pipeline).toArray();
 }
 
-async function filterByPrismId  (req, res) {
+async function filterByPrismId(req, res) {
   try {
     const prismId = req.params.prismId;
     if (!prismId) {
@@ -1166,18 +1371,139 @@ async function filterByPrismId  (req, res) {
     const data = await getFilteredDashboard(matchStage);
 
     if (!data.length) {
-      return res.status(404).json({ error: "No assets found for this Prism ID" });
+      return res
+        .status(404)
+        .json({ error: "No assets found for this Prism ID" });
     }
 
     res.status(200).json(data);
   } catch (error) {
     console.error("filterByPrismId error:", error);
-    res.status(500).json({ error: "Internal Server Error", details: error.message });
+    res
+      .status(500)
+      .json({ error: "Internal Server Error", details: error.message });
   }
-};
+}
 
+async function filterByDepartment(req, res) {
+  try {
+    const deptName = req.params.deptName;
+    if (!deptName) {
+      return res.status(400).json({ error: "Department name is required" });
+    }
 
+    const matchStage = { "BP.deptName": deptName };
+    const data = await getFilteredDashboard(matchStage);
 
+    if (!data.length) {
+      return res
+        .status(404)
+        .json({ error: "No assets found for this department" });
+    }
+
+    res.status(200).json(data);
+  } catch (error) {
+    console.error("filterByDepartment error:", error);
+    res
+      .status(500)
+      .json({ error: "Internal Server Error", details: error.message });
+  }
+}
+
+async function filterByDataCenter(req, res) {
+  try {
+    const dataCenter = req.params.dataCenter;
+    if (!dataCenter) {
+      return res.status(400).json({ error: "Data center name is required" });
+    }
+
+    const matchStage = { "Infra.dataCentre": dataCenter };
+    const data = await getFilteredDashboard(matchStage);
+
+    if (!data.length) {
+      return res
+        .status(404)
+        .json({ error: "No assets found for this data center" });
+    }
+
+    res.status(200).json(data);
+  } catch (error) {
+    console.error("filterByDataCenter error:", error);
+    res
+      .status(500)
+      .json({ error: "Internal Server Error", details: error.message });
+  }
+}
+
+async function getFilteredDashboard(matchStage) {
+  const db = getDb();
+
+  const pipeline = [
+    { $match: matchStage },
+    {
+      $project: {
+        _id: 0,
+        assetsId: 1,
+        projectName: "$BP.name",
+        prismId: "$BP.prismId",
+        deptName: "$BP.deptName",
+        HOD: "$BP.HOD",
+        employeeId: "$BP.employeeId",
+        securityAudits: "$SA.securityAudit",
+        dataCentre: "$Infra.dataCentre",
+        createdAt: 1,
+      },
+    },
+    { $unwind: { path: "$securityAudits", preserveNullAndEmptyArrays: true } },
+    {
+      $project: {
+        assetsId: 1,
+        projectName: 1,
+        prismId: 1,
+        deptName: 1,
+        HOD: 1,
+        employeeId: 1,
+        auditDate: "$securityAudits.auditDate",
+        expireDate: "$securityAudits.expireDate",
+        tlsNextExpiry: "$securityAudits.tlsNextExpiry",
+        sslLabScore: "$securityAudits.sslLabScore",
+        certificate: "$securityAudits.certificate",
+        auditStatus: "$securityAudits.auditStatus",
+        sslStatus: "$securityAudits.sslStatus",
+        dataCentre: 1,
+        createdAt: 1,
+      },
+    },
+    { $sort: { expireDate: 1 } },
+  ];
+
+  return db.collection("Assets").aggregate(pipeline).toArray();
+}
+
+async function filterByPrismId(req, res) {
+  try {
+    const prismId = req.params.prismId;
+    if (!prismId) {
+      return res.status(400).json({ error: "Prism ID is required" });
+    }
+
+    const matchStage = { "BP.prismId": prismId };
+    const data = await getFilteredDashboard(matchStage);
+
+    if (!data.length) {
+      return res
+        .status(404)
+        .json({ error: "No assets found for this Prism ID" });
+    }
+
+    res.status(200).json(data);
+  } catch (error) {
+    console.error("filterByPrismId error:", error);
+    res
+      .status(500)
+      .json({ error: "Internal Server Error", details: error.message });
+  }
+}
 
 module.exports = {
   createAsset,
@@ -1200,7 +1526,7 @@ module.exports = {
   getExpiringCertsByEmployeeId,
   filterByDepartment,
   filterByDataCenter,
-  filterByPrismId
+  filterByPrismId,
 
   // getAssetByProjectName, // Make sure this exists!
   // getAllProjects         // Make sure this exists!
