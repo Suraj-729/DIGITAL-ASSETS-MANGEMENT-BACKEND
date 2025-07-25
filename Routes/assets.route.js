@@ -99,27 +99,6 @@ router.post("/upload-va-report", upload.single("vaReport"), async (req, res) => 
   }
 });
 
-// ✅ View VA Report
-// router.get("/view-va-report/:filename", (req, res) => {
-//   const filename = decodeURIComponent(req.params.filename);
-//   const filePath = path.join(__dirname, "..", "uploads", filename);
-
-//   if (!fs.existsSync(filePath)) {
-//     return res.status(404).json({ error: "File not found" });
-//   }
-
-//   res.setHeader("Content-Type", "application/pdf");
-//   res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
-
-//   const fileStream = fs.createReadStream(filePath);
-//   fileStream.pipe(res);
-
-//   fileStream.on("error", (err) => {
-//     console.error("File stream error:", err);
-//     res.status(500).json({ error: "Error reading the file" });
-//   });
-// });
-
 router.post("/upload-va-report", upload.single("vaReport"), (req, res) => {
   if (!req.file) return res.status(400).json({ error: "No file uploaded" });
   res.status(201).json({ filename: req.file.filename });

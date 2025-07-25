@@ -23,22 +23,7 @@ const UserModel = {
   },
 
 
-//  async findByLogin(userId, password) {
-//     const db = getDb();
-//     console.log(`Attempting to find user: ${userId}`);
-    
-//     const user = await db.collection("Users").findOne({ userId });
-//     if (!user) {
-//       console.log(`User not found: ${userId}`);
-//       return null;
-//     }
 
-//     console.log(`User found, comparing password for: ${userId}`);
-//     const isMatch = await bcrypt.compare(password, user.password);
-//     console.log(`Password match result for ${userId}: ${isMatch}`);
-    
-//     return isMatch ? user : null;
-//   },
 async findByLogin(identifier, password) {
   const db = getDb();
   console.log(`Attempting to find user by userId or employeeId: ${identifier}`);
