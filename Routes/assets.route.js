@@ -184,9 +184,12 @@ router.get('/va-reports/:filename', (req, res) => {
   });
 });
 
+router.post('/addprojectbyhod',AssetsController.assignHodProject);
 
+router.get('/projectsAssignedByHOD/:employeeId',AssetsController.getProjectManagersAssignedByHOD);
+router.get('/allProjectManagers', AssetsController.getAllProjectManagers);
 
-
+router.get("/project-assignments/:empCode", AssetsController.getProjectAssignData);
 module.exports = router;
 
 

@@ -114,11 +114,11 @@ async function logout(req, res) {
 
 async function register(req, res) {
   try {
-    const { userId, password, employeeId, employeeType } = req.body;
-    console.log('Registration request for:', userId, 'Employee ID:', employeeId, 'Employee Type:', employeeType);
+   const { userId, password, employeeId, employeeType, employeeName } = req.body;
+    console.log('Registration request for:', userId, 'Employee ID:', employeeId, 'Employee Type:', employeeType, employeeName,'employeeName');
 
     // Validate input
-    if (!userId || !password || !employeeId || !employeeType) {
+    if (!userId || !password || !employeeId || !employeeType || !employeeName) {
       console.log('Missing registration fields');
       return res.status(400).json({ error: "UserId, password, employeeId, and employeeType are required" });
     }
@@ -131,7 +131,8 @@ async function register(req, res) {
     }
 
     // Create new user
-    const newUserId = await UserModel.createUser({ userId, password, employeeId, employeeType });
+    const newUserId = await UserModel.createUser({ userId, password, employeeId, employeeType, employeeName });
+
     console.log('New user created:', newUserId);
 
     res.status(201).json({ 

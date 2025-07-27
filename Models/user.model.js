@@ -1,6 +1,7 @@
 const { getDb } = require("../Db/Db");
 const bcrypt = require("bcrypt");
-
+const jwt = require("jsonwebtoken");
+const SECRET_KEY = "your-secret-key";
 const UserModel = {
 
 
@@ -60,22 +61,54 @@ async findByLogin(identifier, password) {
   return isMatch ? user : null;
 },
 
+// async findByLogin(identifier, password) {
+//   const db = getDb();
+//   const user = await db.collection("Users").findOne({
+//     $or: [{ userId: identifier }, { employeeId: identifier }]
+//   });
 
-  async createUser(data) {
+//   if (!user) return null;
+
+//   const isMatch = await bcrypt.compare(password, user.password);
+//   if (!isMatch) return null;
+
+//   // Generate JWT
+//   const token = jwt.sign(
+//     { userId: user.userId, employeeId: user.employeeId, role: user.employeeType },
+//     SECRET_KEY,
+//     { expiresIn: "1h" }
+//   );
+
+//   return { user, token };
+// },
+
+async createUser(data) {
   const db = getDb();
   const hashedPassword = await bcrypt.hash(data.password, 10);
+
+  // Base user profile
   const userProfile = {
     userId: data.userId,
     password: hashedPassword,
     employeeId: data.employeeId,
     employeeType: data.employeeType,
-    HOD: data.HOD || "", // <-- Add this line to store HOD if provided, else empty string
     createdAt: new Date(),
   };
-  console.log('Creating new user:', userProfile.userId, userProfile.employeeId, userProfile.employeeType, userProfile.HOD);
+
+  // Conditionally add the name under PM, HOD, or Admin field
+  if (data.employeeType === "PM") {
+    userProfile.PM = data.employeeName;
+  } else if (data.employeeType === "HOD") {
+    userProfile.HOD = data.employeeName;
+  } else if (data.employeeType === "Admin") {
+    userProfile.Admin = data.employeeName;
+  }
+
+  console.log('Creating new user:', userProfile);
   const result = await db.collection("Users").insertOne(userProfile);
   return result.insertedId;
-},
+}
+,
 
 async updatePasswordByLoginId(identifier, newPassword) {
   const db = getDb();

@@ -1505,6 +1505,242 @@ async function filterByPrismId(req, res) {
   }
 }
 
+
+// async function createAssetByHOD(req, res) {
+//   try {
+//     const {
+//       assetsId,
+//       name,
+//       employeeId,
+//       deptName,
+//       nodalOfficerNIC
+//     } = JSON.parse(req.body.BP);
+
+//     if (!assetsId || !name || !employeeId || !deptName) {
+//       return res.status(400).json({ error: "Required fields missing" });
+//     }
+
+//     const BP = {
+//       assetsId,
+//       name,
+//       employeeId,
+//       deptName,
+//       HOD: req.body.hodName || "", // Optional: you can extract it from session
+//       nodalOfficerNIC: {
+//         name: nodalOfficerNIC?.name || "",
+//         empCode: nodalOfficerNIC?.empCode || "",
+//         mobile: "",
+//         email: ""
+//       },
+//       nodalOfficerDept: {
+//         name: "",
+//         designation: "",
+//         mobile: "",
+//         email: ""
+//       },
+//       prismId: "",
+//       url: "",
+//       publicIp: ""
+//     };
+
+//     // Empty placeholders for other sections
+//     const SA = { securityAudit: [] };
+//     const TS = {
+//       frontend: [], framework: [], database: [], os: [], osVersion: [], repoUrls: []
+//     };
+//     const Infra = {
+//       typeOfServer: "", dataCentre: "", deployment: "", location: "", gitUrls: [], vaRecords: []
+//     };
+
+//     const assetId = await AssetsModel.createAsset({
+//       BP,
+//       SA,
+//       TS,
+//       Infra,
+//       certificate: null
+//     });
+
+//     res.status(201).json({ message: "Asset created by HOD", assetId });
+//   } catch (err) {
+//     console.error("Error in createAssetByHOD:", err);
+//     res.status(500).json({ error: "HOD asset creation failed" });
+//   }
+// }
+// No multipart/form-data needed
+
+async function assignHodProject(req, res) {
+  try {
+    const {
+      projectName,
+      employeeId,
+      deptName,
+      hodName,
+      projectManagerName,
+      empCode
+    } = req.body;
+
+    if (!projectName || !employeeId || !deptName) {
+      return res.status(400).json({ error: "Required fields missing" });
+    }
+
+    const assignData = {
+      projectName,
+      employeeId,
+      deptName,
+      hodName,
+      projectManagerName,
+      empCode
+    };
+
+    const insertedId = await AssetsModel.assignByHOD(assignData);
+
+    res.status(201).json({
+      message: "Project assigned successfully by HOD",
+      insertedId
+    });
+
+  } catch (err) {
+    console.error("Error in assignHodProject:", err);
+    res.status(500).json({ error: "Failed to assign project by HOD" });
+  }
+}
+
+// async function getProjectManagersAssignedByHOD(req, res) {
+//   try {
+//     const db = getDb();
+//     const hodId = req.params.employeeId;
+
+//     if (!hodId) {
+//       return res.status(400).json({ error: "HOD employeeId is required" });
+//     }
+
+//     // Fetch assigned projects by this HOD
+//     const assignedProjects = await db
+//       .collection("Users")
+//       .find({ employeeId: hodId })
+//       .toArray();
+
+//     // Extract only projectManagerName and empCode
+//     const projectManagers = assignedProjects.map(project => ({
+//       projectManagerName: project.projectManagerName || "",
+//       empCode: project.empCode || ""
+//     }));
+
+//     res.status(200).json({ projectManagers });
+//   } catch (err) {
+//     console.error("Error in getProjectManagersAssignedByHOD:", err);
+//     res.status(500).json({ error: "Failed to retrieve project managers" });
+//   }
+// }
+
+async function getProjectManagersAssignedByHOD(req, res) {
+  try {
+    const db = getDb();
+    const hodEmployeeId = req.params.employeeId;
+
+    if (!hodEmployeeId) {
+      return res.status(400).json({ error: "HOD employeeId is required" });
+    }
+
+    // Step 1: Get HOD name from Users collection
+    const hodUser = await db.collection("Users").findOne({
+      employeeId: hodEmployeeId,
+      employeeType: "HOD"
+    });
+
+    if (!hodUser || !hodUser.HOD) {
+      return res.status(404).json({ error: "HOD not found or missing HOD name" });
+    }
+
+    const hodName = hodUser.HOD;
+
+    // Step 2: Get empCodes of PMs assigned by this HOD from AssignedAssets
+    const assignedAssets = await db.collection("AssignedAssets").find({ HOD: hodName }).toArray();
+
+    const empCodes = [...new Set(assignedAssets.map(a => a.empCode))]; // unique empCodes
+
+    if (empCodes.length === 0) {
+      return res.status(200).json({ projectManagers: [] });
+    }
+
+    // Step 3: Fetch PM user data from Users where employeeId in empCodes and type is PM
+    const projectManagers = await db.collection("Users").find({
+      employeeId: { $in: empCodes },
+      employeeType: "PM"
+    }).toArray();
+
+    res.status(200).json({ projectManagers });
+  } catch (err) {
+    console.error("Error in getProjectManagersAssignedByHOD:", err);
+    res.status(500).json({ error: "Failed to retrieve project managers" });
+  }
+}
+
+// async function getAllProjectManagers(req, res) {
+//   try {
+//     const db = getDb();
+
+//     // Only fetch users whose role is "PM"
+//     const projectManagers = await db.collection("Users").find({
+//       employeeType: "PM"
+//     }).toArray();
+
+//     res.status(200).json({ projectManagers });
+//   } catch (err) {
+//     console.error("Error in getAllProjectManagers:", err);
+//     res.status(500).json({ error: "Failed to retrieve project managers" });
+//   }
+// }
+async function getAllProjectManagers(req, res) {
+  try {
+    const db = getDb();
+
+    // Fetch only employeeId and PM name (exclude _id)
+    const projectManagers = await db.collection("Users").find(
+      { employeeType: "PM" },
+      {
+        projection: {
+          employeeId: 1,
+          PM: 1,
+          _id: 0
+        }
+      }
+    ).toArray();
+
+    res.status(200).json({ projectManagers });
+  } catch (err) {
+    console.error("Error in getAllProjectManagers:", err);
+    res.status(500).json({ error: "Failed to retrieve project managers" });
+  }
+}
+
+async function getProjectAssignData(req, res) {
+  try {
+    const db = await getDb();
+    const collection = db.collection("AssignedAssets"); // Update if your collection name differs
+
+    const { empCode } = req.params;
+
+    if (!empCode) {
+      return res.status(400).json({ message: "empCode is required" });
+    }
+
+    const result = await collection.find({ empCode }).toArray();
+
+    if (result.length === 0) {
+      return res.status(404).json({ message: "No project data found for the given empCode" });
+    }
+
+    res.status(200).json(result);
+  } catch (err) {
+    console.error("Error fetching project assignment data:", err);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
+
+
+
 module.exports = {
   createAsset,
   getAsset,
@@ -1527,6 +1763,10 @@ module.exports = {
   filterByDepartment,
   filterByDataCenter,
   filterByPrismId,
+  assignHodProject,
+  getProjectManagersAssignedByHOD,
+  getAllProjectManagers,
+  getProjectAssignData
 
   // getAssetByProjectName, // Make sure this exists!
   // getAllProjects         // Make sure this exists!
