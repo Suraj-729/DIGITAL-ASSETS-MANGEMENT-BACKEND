@@ -35,7 +35,7 @@ async function getAsset(req, res) {
     if (!asset) return res.status(404).json({ error: "Asset not found" });
 
     res.status(200).json({
-      BP: asset.BP,
+      BP: asset.BP, 
       SA: asset.SA,
       Infra: asset.Infra,
       TS: asset.TS,

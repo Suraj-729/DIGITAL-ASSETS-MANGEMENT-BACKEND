@@ -256,7 +256,7 @@ const DigitalAssetsModel = {
   
     while (!isUnique) {
       const randomNum = Math.floor(1000 + Math.random() * 9000); // 4-digit random number
-      const tempId = ` NICOD-${randomNum}`;
+      const tempId = `NICOD-${randomNum}`;
   
       const existing = await db.collection("Assets").findOne({ assetsId: tempId });
       if (!existing) {

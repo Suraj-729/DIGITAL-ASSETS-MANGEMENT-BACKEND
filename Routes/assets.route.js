@@ -1,6 +1,3 @@
-
-
-
 const express = require("express");
 const router = express.Router();
 const { GridFSBucket } = require("mongodb");
@@ -14,8 +11,6 @@ const AssetsController = require('../Controllers/assets.controller');
 const path = require("path");
   // const upload = require('../middlewares/pdfUpload');
  
-
-
 // Asset routes
 router.post('/assets/createAsset', upload.single('certificate'), AssetsController.createAsset);
 router.get('/assets/:assetsId', AssetsController.getAsset);
@@ -29,6 +24,7 @@ router.get('/assets/by-department/:deptName', AssetsController.getAssetsByDepart
 router.get('/dashboard/expiring/:employeeId', AssetsController.getExpiringCertsByEmployeeId);
 // router.get('/notifications/expiring-certificates', AssetsController.getExpiringCertNotifications);
 // router.get("/notifications/expiring-certificates/:assetsId", AssetsController.getExpiringCertByAssetsId);
+router.get("/session-check", UserController.sessionCheck);
 
 
 

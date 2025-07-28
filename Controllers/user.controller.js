@@ -1,5 +1,16 @@
 const UserModel = require("../Models/user.model");
+const jwt = require("jsonwebtoken");
+const JWT_SECRET = process.env.JWT_SECRET || "myjwtsecret";
 
+
+function generateToken(user) {
+  return jwt.sign({
+    userId: user.userId,
+    employeeId: user.employeeId,
+    employeeType: user.employeeType,
+    // HOD: typeof user.HOD === "string" ? user.HOD : ""
+  }, JWT_SECRET, { expiresIn: "24h" });
+}
 // Create a new user
 async function createUser(req, res) {
   try {
@@ -55,61 +66,118 @@ async function deleteUser(req, res) {
   }
 }
 
+// async function login(req, res) {
+//   try {
+//     const { loginId, password } = req.body; // Accept loginId (can be userId or employeeId)
+//     console.log('Login request received for loginId:', loginId);
+
+//     if (!loginId || !password) {
+//       console.log('Missing credentials');
+//       return res.status(400).json({ error: "Login ID and password are required" });
+//     }
+
+//     const user = await UserModel.findByLogin(loginId, password);
+
+//     if (!user) {
+//       console.log('Invalid login attempt for loginId:', loginId);
+//       return res.status(401).json({ error: "Invalid credentials" });
+//     }
+
+//     console.log('User authenticated successfully:', loginId);
+//     req.session.user = { userId: user.userId, employeeId: user.employeeId, employeeType: user.employeeType  };
+//     req.session.createdAt = Date.now(); 
+//     res.status(200).json({ 
+//       message: "Login successful",
+//       user: { 
+//         userId: user.userId,
+//         employeeId: user.employeeId,
+//         employeeType: user.employeeType,
+//         HOD: typeof user.HOD === "string" ? user.HOD : "" // Always send HOD name or empty string
+//       }
+//     });
+//   } catch (err) {
+//     console.error('Login error:', {
+//       message: err.message,
+//       stack: err.stack,
+//       requestBody: req.body
+//     });
+//     res.status(500).json({ 
+//       error: "Login failed",
+//       details: process.env.NODE_ENV === 'development' ? err.message : undefined
+//     });
+//   }
+// }
+
+
 async function login(req, res) {
   try {
-    const { loginId, password } = req.body; // Accept loginId (can be userId or employeeId)
-    console.log('Login request received for loginId:', loginId);
+    const { loginId, password } = req.body;
 
     if (!loginId || !password) {
-      console.log('Missing credentials');
       return res.status(400).json({ error: "Login ID and password are required" });
     }
 
     const user = await UserModel.findByLogin(loginId, password);
-
     if (!user) {
-      console.log('Invalid login attempt for loginId:', loginId);
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    console.log('User authenticated successfully:', loginId);
-    req.session.user = { userId: user.userId, employeeId: user.employeeId, employeeType: user.employeeType  };
-    req.session.createdAt = Date.now(); 
-    res.status(200).json({ 
+    const token = generateToken(user);
+
+    // Send JWT in HTTP-only cookie
+    res.cookie("auth_token", token, {
+      httpOnly: true,
+      secure: false, // set true if HTTPS
+      maxAge: 24 * 60 * 60 * 1000,
+      sameSite: "lax"
+    });
+
+    res.status(200).json({
       message: "Login successful",
-      user: { 
+      user: {
         userId: user.userId,
         employeeId: user.employeeId,
         employeeType: user.employeeType,
-        HOD: typeof user.HOD === "string" ? user.HOD : "" // Always send HOD name or empty string
+        HOD: typeof user.HOD === "string" ? user.HOD : ""
       }
     });
   } catch (err) {
-    console.error('Login error:', {
-      message: err.message,
-      stack: err.stack,
-      requestBody: req.body
-    });
-    res.status(500).json({ 
-      error: "Login failed",
-      details: process.env.NODE_ENV === 'development' ? err.message : undefined
-    });
+    console.error("Login error:", err);
+    res.status(500).json({ error: "Login failed" });
   }
 }
+
 
 // Logout user
+// async function logout(req, res) {
+//   try {
+//     if (req.session) {
+//       req.session.user = null;
+//     }
+//     res.status(200).json({ message: "Logout successful" });
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ error: "Logout failed", details: err.message });
+//   }
+// }
 async function logout(req, res) {
-  try {
-    if (req.session) {
-      req.session.user = null;
-    }
-    res.status(200).json({ message: "Logout successful" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Logout failed", details: err.message });
-  }
+  res.clearCookie("auth_token");
+  return res.status(200).json({ message: "Logout successful" });
 }
 
+// ✅ Add middleware-friendly endpoint to decode token
+function getLoggedInUser(req, res) {
+  const token = req.cookies.auth_token;
+
+  if (!token) return res.status(401).json({ error: "No token" });
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    return res.status(200).json({ user: decoded });
+  } catch (err) {
+    return res.status(401).json({ error: "Invalid token" });
+  }
+}
 
 
 async function register(req, res) {
@@ -172,6 +240,22 @@ async function changePassword(req, res) {
     res.status(500).json({ error: "Failed to change password", details: err.message });
   }
 }
+const sessionCheck = (req, res) => {
+  const token = req.cookies.auth_token;
+  if (!token) return res.status(401).json({ loggedIn: false, message: "No token" });
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    return res.status(200).json({
+      loggedIn: true,
+      employeeId: decoded.employeeId,
+      employeeType: decoded.employeeType,
+      userId: decoded.userId
+    });
+  } catch (err) {
+    return res.status(401).json({ loggedIn: false, message: "Invalid or expired token" });
+  }
+};
 
 
 
@@ -183,7 +267,9 @@ module.exports = {
   login,
   logout,
   register,
-  changePassword
+  changePassword,
+  getLoggedInUser,
+  sessionCheck
 };
 
 // After login response
