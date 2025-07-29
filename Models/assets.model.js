@@ -467,6 +467,30 @@ const DigitalAssetsModel = {
       ])
       .toArray();
   },
+
+
+ async assignByHOD(data) {
+  const db = getDb();
+
+  const assignedAsset = {
+    projectName: data.projectName || "",
+    employeeId: data.employeeId || "",
+    deptName: data.deptName || "",
+    HOD: data.hodName || "",
+    projectManagerName: data.projectManagerName || "",
+    empCode: data.empCode || "",
+    createdAt: new Date(),
+    updatedByPM: false
+  };
+
+  console.log(assignedAsset);
+
+  const result = await db.collection("AssignedAssets").insertOne(assignedAsset);
+  return result.insertedId;
+}
+
+
+
 };
 
 module.exports = DigitalAssetsModel;

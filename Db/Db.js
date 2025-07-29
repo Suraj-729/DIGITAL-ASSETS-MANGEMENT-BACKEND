@@ -4,6 +4,10 @@ const { MONGODB_URI, DB_NAME } = require("../Config/Config");
 
 let clientInstance = null;
 
+/**
+ * Connects to the MongoDB database and reuses the connection if already established.
+ * @returns {Promise<MongoClient>} The connected MongoClient instance.
+ */
 async function connectToDb() {
   // As of MongoDB Node.js Driver v4.x+, isConnected() is deprecated.
   // A more modern check might involve trying a simple operation or checking client.topology.isConnected()
@@ -28,7 +32,10 @@ async function connectToDb() {
   }
 }
 
-// Function to get the database instance
+/**
+ * Returns the database instance. Throws an error if not connected.
+ * @returns {import('mongodb').Db} The MongoDB database instance.
+ */
 function getDb() {
   if (!clientInstance) {
     throw new Error("Database not connected. Call connectToDb first.");
@@ -36,7 +43,10 @@ function getDb() {
   return clientInstance.db(DB_NAME);
 }
 
-// Function to close the database connection
+/**
+ * Closes the MongoDB connection.
+ * @returns {Promise<void>}
+ */
 async function closeDb() {
   if (clientInstance) {
     await clientInstance.close();

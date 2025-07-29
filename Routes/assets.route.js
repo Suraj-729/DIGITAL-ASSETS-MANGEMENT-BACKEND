@@ -26,14 +26,16 @@ router.put('/assets/update/infra/:assetsId', AssetsController.updateInfra);
 router.put('/assets/update/ts/:assetsId', AssetsController.updateTS);
 router.get('/assets/datacentre/:dataCentre', AssetsController.getAssetsByDataCentre);
 router.get('/assets/by-department/:deptName', AssetsController.getAssetsByDepartment);
-router.get('/dashboard/expiring/:employeeId', AssetsController.getExpiringCertsByEmployeeId);
+// router.get('/dashboard/expiring/:employeeId', AssetsController.getExpiringCertsByEmployeeId);
 // router.get('/notifications/expiring-certificates', AssetsController.getExpiringCertNotifications);
 // router.get("/notifications/expiring-certificates/:assetsId", AssetsController.getExpiringCertByAssetsId);
 
+router.get("/audit-expiry-alerts/:employeeId", AssetsController.getAuditExpiryNotificationsByEmployee);
 
-
-
-
+router.get("/audit-expiry-by-asset/:assetsId", AssetsController.getAuditExpiryByAssetId);
+// router.get("/notifications/:employeeId", AssetsController.getNotifications);
+router.get("/notifications/:employeeId", AssetsController.getNotificationByEmployeeId);
+router.get("/audit-expiry/:employeeId", AssetsController.getAuditExpiryForUser);
 
 router.get("/view-va-report/:filename", (req, res) => {
   const filename = decodeURIComponent(req.params.filename);
@@ -142,9 +144,12 @@ router.get('/va-reports/:filename', (req, res) => {
   });
 });
 
+router.post('/addprojectbyhod',AssetsController.assignHodProject);
 
+router.get('/projectsAssignedByHOD/:employeeId',AssetsController.getProjectManagersAssignedByHOD);
+router.get('/allProjectManagers', AssetsController.getAllProjectManagers);
 
-
+router.get("/project-assignments/:empCode", AssetsController.getProjectAssignData);
 module.exports = router;
 
 

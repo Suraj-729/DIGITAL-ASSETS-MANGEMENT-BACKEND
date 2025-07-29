@@ -1,6 +1,11 @@
 const UserModel = require("../Models/user.model");
 
-// Create a new user
+/**
+ * Creates a new user.
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @returns {Promise<void>}
+ */
 async function createUser(req, res) {
   try {
     const userId = await UserModel.createUser(req.body);
@@ -11,7 +16,12 @@ async function createUser(req, res) {
   }
 }
 
-// Get user by assetsId
+/**
+ * Retrieves a user by their assetsId.
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @returns {Promise<void>}
+ */
 async function getUserById(req, res) {
   try {
     const user = await UserModel.getUserById(req.params.assetsId);
@@ -25,7 +35,12 @@ async function getUserById(req, res) {
   }
 }
 
-// Update user password
+/**
+ * Updates a user's password.
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @returns {Promise<void>}
+ */
 async function updatePassword(req, res) {
   try {
     const { assetsId } = req.params;
@@ -41,7 +56,12 @@ async function updatePassword(req, res) {
   }
 }
 
-// Delete user by assetsId
+/**
+ * Deletes a user by their assetsId.
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @returns {Promise<void>}
+ */
 async function deleteUser(req, res) {
   try {
     const result = await UserModel.deleteUser(req.params.assetsId);
@@ -55,6 +75,12 @@ async function deleteUser(req, res) {
   }
 }
 
+/**
+ * Authenticates a user and starts a session.
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @returns {Promise<void>}
+ */
 async function login(req, res) {
   try {
     const { loginId, password } = req.body; // Accept loginId (can be userId or employeeId)
@@ -97,7 +123,12 @@ async function login(req, res) {
   }
 }
 
-// Logout user
+/**
+ * Logs out a user and clears their session.
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @returns {Promise<void>}
+ */
 async function logout(req, res) {
   try {
     if (req.session) {
@@ -112,13 +143,19 @@ async function logout(req, res) {
 
 
 
+/**
+ * Registers a new user.
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @returns {Promise<void>}
+ */
 async function register(req, res) {
   try {
-    const { userId, password, employeeId, employeeType } = req.body;
-    console.log('Registration request for:', userId, 'Employee ID:', employeeId, 'Employee Type:', employeeType);
+   const { userId, password, employeeId, employeeType, employeeName } = req.body;
+    console.log('Registration request for:', userId, 'Employee ID:', employeeId, 'Employee Type:', employeeType, employeeName,'employeeName');
 
     // Validate input
-    if (!userId || !password || !employeeId || !employeeType) {
+    if (!userId || !password || !employeeId || !employeeType || !employeeName) {
       console.log('Missing registration fields');
       return res.status(400).json({ error: "UserId, password, employeeId, and employeeType are required" });
     }
@@ -131,7 +168,8 @@ async function register(req, res) {
     }
 
     // Create new user
-    const newUserId = await UserModel.createUser({ userId, password, employeeId, employeeType });
+    const newUserId = await UserModel.createUser({ userId, password, employeeId, employeeType, employeeName });
+
     console.log('New user created:', newUserId);
 
     res.status(201).json({ 
@@ -153,6 +191,12 @@ async function register(req, res) {
   }
 }
 
+/**
+ * Changes a user's password after verifying their current password.
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @returns {Promise<void>}
+ */
 async function changePassword(req, res) {
   try {
     const { loginId, currentPassword, newPassword } = req.body;
