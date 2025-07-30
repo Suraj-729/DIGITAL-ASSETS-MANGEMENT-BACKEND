@@ -190,6 +190,10 @@ router.get('/projectsAssignedByHOD/:employeeId',AssetsController.getProjectManag
 router.get('/allProjectManagers', AssetsController.getAllProjectManagers);
 
 router.get("/project-assignments/:empCode", AssetsController.getProjectAssignData);
+router.get("/project-assignments/by-pm/:empCode", AssetsController.getProjectsAssignedToPM);
+router.get("/databases", AssetsController.getDatabaseList);
+
+
 module.exports = router;
 
 

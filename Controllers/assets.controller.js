@@ -1741,6 +1741,58 @@ async function getProjectAssignData(req, res) {
 
 
 
+async function getProjectsAssignedToPM(req, res) {
+  try {
+    const { empCode } = req.params;
+    console.log("Received empCode:", empCode); // DEBUG LOG
+
+    if (!empCode) {
+      return res.status(400).json({ message: "empCode is required" });
+    }
+
+    const db = await getDb();
+    const collection = db.collection("AssignedAssets");
+
+    // Only return specific fields
+    const projects = await collection
+      .find({ empCode }, { projection: { projectName: 1, 
+deptName: 1, HOD: 1, projectManagerName: 1, empCode: 1,
+ employeeId: 1, _id: 0 } })
+      .toArray();
+
+    if (projects.length === 0) {
+      return res.status(404).json({ message: "No projects found for the given empCode" });
+    }
+
+    res.status(200).json(projects);
+  } catch (err) {
+    console.error("Error fetching PM projects:", err);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
+async function getDatabaseList(req, res) {
+  try {
+    const db = await getDb();
+    const collection = db.collection("database"); // Your collection name
+
+    // const data = await collection.find({ projection: { DB: 1, Version: 1,  _id: 0 } }).toArray(); // Fetch all entries
+   const data = await collection.find({}, { projection: { DB: 1, Version: 1, _id: 0 } }).toArray();
+
+    if (!data.length) {
+      return res.status(404).json({ message: "No database versions found" });
+    }
+
+    res.status(200).json(data);
+  } catch (err) {
+    console.error("Error fetching database versions:", err);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
+
+
+
 module.exports = {
   createAsset,
   getAsset,
@@ -1766,7 +1818,9 @@ module.exports = {
   assignHodProject,
   getProjectManagersAssignedByHOD,
   getAllProjectManagers,
-  getProjectAssignData
+  getProjectAssignData,
+  getProjectsAssignedToPM,
+  getDatabaseList
 
   // getAssetByProjectName, // Make sure this exists!
   // getAllProjects         // Make sure this exists!
