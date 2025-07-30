@@ -1,4 +1,5 @@
 
+
 const { getDb } = require("../Db/Db");
 const { ObjectId } = require("mongodb");
 
@@ -56,7 +57,7 @@ const DigitalAssetsModel = {
       }
       if (!record.dateOfVA) {
         throw new Error(`VA Record ${index + 1}: Date of VA is required`);
-      }
+      } 
 
       // Transform the record
       return {
@@ -111,8 +112,11 @@ const DigitalAssetsModel = {
       // },
 
       SA: {
+        
   securityAudit: data.SA.securityAudit.map((record, index) => {
     // Handle possible undefined/null values
+            console.log("hooooo");
+
     const auditDate = record.auditDate ? new Date(record.auditDate) : null;
     const expireDate = record.expireDate ? new Date(record.expireDate) : null;
     const tlsNextExpiry = record.tlsNextExpiry ? new Date(record.tlsNextExpiry) : null;
@@ -135,7 +139,6 @@ const DigitalAssetsModel = {
       auditingAgency: record.auditingAgency,
       auditDate,
       expireDate,
-      tlsNextExpiry,
       sslLabScore: record.sslLabScore,
       certificate: record.certificate,
       auditStatus,
@@ -144,6 +147,47 @@ const DigitalAssetsModel = {
   }),
 }
 ,
+
+TLS: {
+  tlsInfo: (() => {
+    const record = data.TLS?.tlsInfo?.[0]; // or directly use `data.tlsRecord` if frontend now sends a single object
+
+    if (!record) return null;
+
+    const issueDate = record.issueDate ? new Date(record.issueDate) : null;
+    const expiryDate = record.expiryDate ? new Date(record.expiryDate) : null;
+
+    let certStatus = "Valid";
+    if (expiryDate && new Date() > expiryDate) {
+      certStatus = "Expired";
+    } else if (expiryDate) {
+      const warningPeriod = new Date();
+      warningPeriod.setDate(warningPeriod.getDate() + 30);
+      if (expiryDate < warningPeriod) {
+        certStatus = "Expiring Soon";
+      }
+    }
+
+    return {
+      issueDate,
+      expiryDate,
+      tlsLabScore: record.score || "Not Rated",
+      certificate: record.procuredFrom || "Unknown",
+      certStatus
+    };
+  })()
+}
+,
+   
+
+ DRInfo: {
+  
+    typeOfServer: data.Infra.typeOfServer,
+        location: data.Infra.location,
+        deployment: data.Infra.deployment,
+        dataCentre: data.Infra.dataCentre,
+         vaRecords: validatedVaRecords,
+  },
       Infra: {
         typeOfServer: data.Infra.typeOfServer,
         location: data.Infra.location,
@@ -163,6 +207,8 @@ const DigitalAssetsModel = {
       },
       createdAt: new Date(),
     };
+
+    
 
     const result = await db.collection("Assets").insertOne(assetProfile);
     return result.insertedId;
@@ -200,6 +246,12 @@ const DigitalAssetsModel = {
       .collection("Assets")
       .updateOne({ assetsId }, { $set: { SA: newSA } });
   },
+  async updateTLS(assetsId, newTLS) {
+  const db = getDb();
+  return await db
+    .collection("Assets")
+    .updateOne({ assetsId }, { $set: { TLS: newTLS } });
+},
 
   // ✅ Update Infra section
   async updateInfra(assetsId, newInfra) {
@@ -212,12 +264,18 @@ const DigitalAssetsModel = {
   },
 
   // ✅ Update TS section
-  async updateTS(assetsId, newTS) {
+  async updateTS(assetsId, newTLS) {
     const db = getDb();
     return await db
       .collection("Assets")
-      .updateOne({ assetsId }, { $set: { TS: newTS } });
+      .updateOne({ assetsId }, { $set: { TLS: newTLS } });
   },
+  async updateDRInfo(assetsId, newDRInfo) {
+  const db = getDb();
+  return await db
+    .collection("Assets")
+    .updateOne({ assetsId }, { $set: { DRInfo: newDRInfo } });
+},
 
   async getDashboardAllProjectBySIO() {
     const db = getDb();

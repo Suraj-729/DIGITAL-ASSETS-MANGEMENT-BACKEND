@@ -1,28 +1,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 const express = require("express");
 const router = express.Router();
 const { GridFSBucket } = require("mongodb");
@@ -53,6 +31,18 @@ router.get('/notifications/expiring-certificates', AssetsController.getExpiringC
 router.get("/notifications/latest", AssetsController.getLatestNotifications);
 router.get("/notifications/all", AssetsController.getAllNotifications);
 router.post("/notifications/:id/read", AssetsController.markNotificationRead);
+
+// GET all distinct project names
+router.get("/projects/all", async (req, res) => {
+  try {
+    const projectNames = await Asset.distinct("projectName");
+    res.json({ success: true, projects: projectNames });
+  } catch (error) {
+    console.error("Error fetching project names:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
 
 
 

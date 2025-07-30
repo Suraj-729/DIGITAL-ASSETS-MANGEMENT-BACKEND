@@ -1,3 +1,6 @@
+
+
+
 const AssetsModel = require("../Models/assets.model");
 const { getDb } = require("../Db/Db");
 const moment = require("moment");
@@ -6,16 +9,27 @@ const { ObjectId } = require("mongodb");
 async function createAsset(req, res) {
   try {
     // Parse the JSON strings from multipart/form-data
-    const BP = JSON.parse(req.body.BP);
-    const SA = JSON.parse(req.body.SA);
-    const TS = JSON.parse(req.body.TS);
-    const Infra = JSON.parse(req.body.Infra);
+    // const BP = JSON.parse(req.body.BP);
+    // const SA = JSON.parse(req.body.SA);
+    // const TS = JSON.parse(req.body.TS);
+    // const Infra = JSON.parse(req.body.Infra);
+    // const TLS = JSON.parse(req.body.TLS);
+    // const DRInfo = JSON.parse(req.body.DRInfo || "{}"); // Handle DRInfo, default to empty object if not provided
+    const BP = typeof req.body.BP === "string" ? JSON.parse(req.body.BP) : req.body.BP;
+
+    const SA = typeof req.body.SA === "string" ? JSON.parse(req.body.SA) : req.body.SA;
+const TS = typeof req.body.TS === "string" ? JSON.parse(req.body.TS) : req.body.TS;
+const Infra = typeof req.body.Infra === "string" ? JSON.parse(req.body.Infra) : req.body.Infra;
+const TLS = typeof req.body.TLS === "string" ? JSON.parse(req.body.TLS) : req.body.TLS;
+const DRInfo = req.body.DRInfo ? (typeof req.body.DRInfo === "string" ? JSON.parse(req.body.DRInfo) : req.body.DRInfo) : {};
 
     const assetId = await AssetsModel.createAsset({
       BP,
       SA,
       TS,
       Infra,
+      TLS,
+       DRInfo,
       certificate: req.file || null,
     });
 
@@ -188,6 +202,16 @@ async function updateTS(req, res) {
     });
   } catch (err) {
     res.status(500).json({ error: "Update TS failed", details: err.message });
+  }
+}
+async function updateDRInfo(req, res) {
+  try {
+    const { assetsId } = req.params;
+    const newDRInfo = req.body.DRInfo ? JSON.parse(req.body.DRInfo) : {};
+    const result = await AssetsModel.updateDRInfo(assetsId, newDRInfo);
+    res.status(200).json({ success: true, result });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to update DRInfo" });
   }
 }
 
@@ -884,6 +908,8 @@ async function updateAssetByProjectName(req, res) {
     const SA = JSON.parse(req.body.SA);
     const TS = JSON.parse(req.body.TS);
     const Infra = JSON.parse(req.body.Infra);
+    const TLS = req.body.TLS ? JSON.parse(req.body.TLS) : undefined;
+    const DRInfo = req.body.DRInfo ? JSON.parse(req.body.DRInfo) : undefined;
 
     console.log("📦 Parsed BP:", BP);
     console.log("📦 Parsed SA (before array check):", SA);
@@ -1531,3 +1557,6 @@ module.exports = {
   // getAssetByProjectName, // Make sure this exists!
   // getAllProjects         // Make sure this exists!
 };
+
+
+
