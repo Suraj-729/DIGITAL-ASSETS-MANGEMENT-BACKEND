@@ -16,12 +16,16 @@ async function createAsset(req, res) {
     const SA = JSON.parse(req.body.SA);
     const TS = JSON.parse(req.body.TS);
     const Infra = JSON.parse(req.body.Infra);
+    const TLS=JSON.parse(req.body.TLS);
+    const  DR=JSON.parse(req.body.DR);
 
     const assetId = await AssetsModel.createAsset({
       BP,
       SA,
       TS,
       Infra,
+      TLS,
+      DR,
       certificate: req.file || null,
     });
 
@@ -742,50 +746,6 @@ async function filterByDataCenter(req, res) {
  * @param {Object} matchStage - MongoDB aggregation match stage
  * @returns {Promise<Array>} Aggregated dashboard data
  */
-// async function getFilteredDashboard(matchStage) {
-//   const db = getDb();
-
-//   const pipeline = [
-//     { $match: matchStage },
-//     {
-//       $project: {
-//         _id: 0,
-//         assetsId: 1,
-//         projectName: "$BP.name",
-//         prismId: "$BP.prismId",
-//         deptName: "$BP.deptName",
-//         HOD: "$BP.HOD",
-//         employeeId: "$BP.employeeId",
-//         securityAudits: "$SA.securityAudit",
-//         dataCentre: "$Infra.dataCentre",
-//         createdAt: 1,
-//       },
-//     },
-//     { $unwind: { path: "$securityAudits", preserveNullAndEmptyArrays: true } },
-//     {
-//       $project: {
-//         assetsId: 1,
-//         projectName: 1,
-//         prismId: 1,
-//         deptName: 1,
-//         HOD: 1,
-//         employeeId: 1,
-//         auditDate: "$securityAudits.auditDate",
-//         expireDate: "$securityAudits.expireDate",
-//         tlsNextExpiry: "$securityAudits.tlsNextExpiry",
-//         sslLabScore: "$securityAudits.sslLabScore",
-//         certificate: "$securityAudits.certificate",
-//         auditStatus: "$securityAudits.auditStatus",
-//         sslStatus: "$securityAudits.sslStatus",
-//         dataCentre: 1,
-//         createdAt: 1,
-//       },
-//     },
-//     { $sort: { expireDate: 1 } },
-//   ];
-
-//   return db.collection("Assets").aggregate(pipeline).toArray();
-// }
 async function getFilteredDashboard(matchStage) {
   const db = getDb();
 
