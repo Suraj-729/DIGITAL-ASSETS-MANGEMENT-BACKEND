@@ -11,12 +11,16 @@ async function createAsset(req, res) {
     const SA = JSON.parse(req.body.SA);
     const TS = JSON.parse(req.body.TS);
     const Infra = JSON.parse(req.body.Infra);
+    const TLS=JSON.parse(req.body.TLS);
+    const  DR=JSON.parse(req.body.DR);
 
     const assetId = await AssetsModel.createAsset({
       BP,
       SA,
       TS,
       Infra,
+      TLS,
+      DR,
       certificate: req.file || null,
     });
 
@@ -348,6 +352,210 @@ async function getDashboardAllProjectBySIO(req, res) {
   }
 }
 
+// async function getProjectDetailsByName(req, res) {
+//   try {
+//     const db = getDb();
+//     const { projectName } = req.params;
+
+//     if (!projectName) {
+//       return res.status(400).json({ error: "Project name is required" });
+//     }
+
+//     const project = await db.collection("Assets").findOne(
+//       { "BP.name": { $regex: new RegExp(`^${projectName}$`, "i") } },
+//       {
+//         projection: {
+//           _id: 0,
+//           assetsId: 1,
+//           BP: 1,
+//           SA: 1,
+//           Infra: 1,
+//           TS: 1,
+//           DR:1,
+//           TLS:1,
+//           createdAt: 1,
+//         },
+//       }
+//     );
+
+//     if (!project) {
+//       return res.status(404).json({ error: "Project not found" });
+//     }
+
+//     // Format the response to match your document structure
+//     const response = {
+//       assetsId: project.assetsId,
+//       projectName: project.BP.name,
+//       BP: {
+//         prismId: project.BP.prismId,
+//         deptName: project.BP.deptName,
+//         url: project.BP.url,
+//         publicIp: project.BP.publicIp,
+//         HOD: project.BP.HOD,
+//         nodalOfficerNIC: project.BP.nodalOfficerNIC || null,
+//         nodalOfficerDept: project.BP.nodalOfficerDept || null,
+//       },
+//       SA: {
+//         securityAudit: project.SA.securityAudit || [],
+//       },
+//       Infra: {
+//         typeOfServer: project.Infra.typeOfServer || null,
+//         location: project.Infra.location || null,
+//         deployment: project.Infra.deployment || null,
+//         dataCentre: project.Infra.dataCentre || null,
+//         gitUrls: project.Infra.gitUrls || [],
+//         vaRecords: project.Infra.vaRecords || [],
+//         additionalInfra: project.Infra.additionalInfra || [],
+//       },
+//       TS: {
+//         frontend: project.TS.frontend || [],
+//         framework: project.TS.framework || null,
+//         database: project.TS.database || [],
+//         os: project.TS.os || [],
+//         osVersion: project.TS.osVersion || [],
+//         repoUrls: project.TS.repoUrls || [],
+//       },
+//       TLS: project.TLS || {}, // <-- Add TLS section
+//       DR: project.DR || {},
+//       createdAt: project.createdAt,
+//     };
+
+//     res.status(200).json(response);
+//   } catch (error) {
+//     console.error("Error in getProjectDetailsByName:", error);
+//     res.status(500).json({
+//       error: "Failed to fetch project details",
+//       details: error.message,
+//     });
+//   }
+// }
+
+// async function getProjectDetailsByName(req, res) {
+//   try {
+//     const db = getDb();
+//     const { projectName } = req.params;
+
+//     if (!projectName) {
+//       return res.status(400).json({ error: "Project name is required" });
+//     }
+
+//     const project = await db.collection("Assets").findOne(
+//       { "BP.name": { $regex: new RegExp(`^${projectName}$`, "i") } },
+//       {
+//         projection: {
+//           _id: 0,
+//           assetsId: 1,
+//           BP: 1,
+//           SA: 1,
+//           Infra: 1,
+//           TS: 1,
+//           DR: 1,
+//           TLS: 1,
+//           createdAt: 1,
+//         },
+//       }
+//     );
+
+//     if (!project) {
+//       return res.status(404).json({ error: "Project not found" });
+//     }
+
+//     // Format TLS Info
+//     const tlsInfo = (project.TLS?.tlsInfo || []).map((record) => ({
+//       domainName: record.domainName || "",
+//       certProvider: record.certProvider || "",
+//       issueDate: record.issueDate
+//         ? (record.issueDate.$date || record.issueDate.toISOString?.() || "")
+//         : "",
+//       expiryDate: record.expiryDate
+//         ? (record.expiryDate.$date || record.expiryDate.toISOString?.() || "")
+//         : "",
+//       certStatus: record.certStatus || "",
+//       score: record.score || "",
+//       procuredFrom: record.procuredFrom || "",
+//     }));
+
+//     // Format DR Info
+//     const drVaRecords = (project.DR?.vaRecords || []).map((record) => ({
+//       ipAddress: record.ipAddress || "",
+//       dbServerIp: record.dbServerIp || "",
+//       purposeOfUse: record.purposeOfUse || "",
+//       vaScore: record.vaScore || "",
+//       dateOfVA: record.dateOfVA
+//         ? (record.dateOfVA.$date || record.dateOfVA.toISOString?.() || "")
+//         : "",
+//       vaReport:
+//         typeof record.vaReport === "string"
+//           ? record.vaReport
+//           : record.vaReport?.filename || "",
+//     }));
+
+//     const response = {
+//       assetsId: project.assetsId || "",
+//       projectName: project.BP?.name || "",
+//       BP: {
+//         prismId: project.BP?.prismId || "",
+//         deptName: project.BP?.deptName || "",
+//         url: project.BP?.url || "",
+//         publicIp: project.BP?.publicIp || "",
+//         HOD: project.BP?.HOD || "",
+//         nodalOfficerNIC: project.BP?.nodalOfficerNIC || {
+//           name: "",
+//           empCode: "",
+//           mobile: "",
+//           email: "",
+//         },
+//         nodalOfficerDept: project.BP?.nodalOfficerDept || {
+//           name: "",
+//           designation: "",
+//           mobile: "",
+//           email: "",
+//         },
+//       },
+//       SA: {
+//         securityAudit: project.SA?.securityAudit || [],
+//       },
+//       Infra: {
+//         typeOfServer: project.Infra?.typeOfServer || "",
+//         location: project.Infra?.location || "",
+//         deployment: project.Infra?.deployment || "",
+//         dataCentre: project.Infra?.dataCentre || "",
+//         gitUrls: project.Infra?.gitUrls || [],
+//         vaRecords: project.Infra?.vaRecords || [],
+//         additionalInfra: project.Infra?.additionalInfra || [],
+//       },
+//       TS: {
+//         frontend: project.TS?.frontend || [],
+//         framework: project.TS?.framework || [],
+//         database: project.TS?.database || [],
+//         os: project.TS?.os || [],
+//         osVersion: project.TS?.osVersion || [],
+//         repoUrls: project.TS?.repoUrls || [],
+//       },
+//       TLS: {
+//         tlsInfo,
+//       },
+//       DR: {
+//         drLocation: project.DR?.drLocation || "",
+//         drStatus: project.DR?.drStatus || "",
+//         lastDrTestDate: project.DR?.lastDrTestDate || "",
+//         remarks: project.DR?.remarks || "",
+//         gitUrls: project.DR?.gitUrls || [],
+//         vaRecords: drVaRecords,
+//       },
+//       createdAt: project.createdAt || "",
+//     };
+
+//     res.status(200).json(response);
+//   } catch (error) {
+//     console.error("Error in getProjectDetailsByName:", error);
+//     res.status(500).json({
+//       error: "Failed to fetch project details",
+//       details: error.message,
+//     });
+//   }
+// }
+
 async function getProjectDetailsByName(req, res) {
   try {
     const db = getDb();
@@ -367,6 +575,8 @@ async function getProjectDetailsByName(req, res) {
           SA: 1,
           Infra: 1,
           TS: 1,
+          DR: 1,
+          TLS: 1,
           createdAt: 1,
         },
       }
@@ -376,40 +586,104 @@ async function getProjectDetailsByName(req, res) {
       return res.status(404).json({ error: "Project not found" });
     }
 
-    // Format the response to match your document structure
+    // Format TLS Info
+    const tlsInfo = (project.TLS?.tlsInfo || []).map((record) => ({
+      domainName: record.domainName || "",
+      certProvider: record.certProvider || "",
+      issueDate: record.issueDate
+        ? (record.issueDate instanceof Date
+            ? record.issueDate.toISOString()
+            : record.issueDate.$date || record.issueDate || "")
+        : "",
+      expiryDate: record.expiryDate
+        ? (record.expiryDate instanceof Date
+            ? record.expiryDate.toISOString()
+            : record.expiryDate.$date || record.expiryDate || "")
+        : "",
+      certStatus: record.certStatus || "",
+      score: record.score || "",
+      procuredFrom: record.procuredFrom || "",
+    }));
+
+    // Format DR Info
+    const drVaRecords = (project.DR?.vaRecords || []).map((record) => ({
+      ipAddress: record.ipAddress || "",
+      dbServerIp: record.dbServerIp || "",
+      purposeOfUse: record.purposeOfUse || "",
+      vaScore: record.vaScore || "",
+      dateOfVA: record.dateOfVA
+        ? (record.dateOfVA instanceof Date
+            ? record.dateOfVA.toISOString()
+            : record.dateOfVA.$date || record.dateOfVA || "")
+        : "",
+      vaReport:
+        typeof record.vaReport === "string"
+          ? record.vaReport
+          : record.vaReport?.filename || "",
+    }));
+
     const response = {
-      assetsId: project.assetsId,
-      projectName: project.BP.name,
+      assetsId: project.assetsId || "",
+      projectName: project.BP?.name || "",
       BP: {
-        prismId: project.BP.prismId,
-        deptName: project.BP.deptName,
-        url: project.BP.url,
-        publicIp: project.BP.publicIp,
-        HOD: project.BP.HOD,
-        nodalOfficerNIC: project.BP.nodalOfficerNIC || null,
-        nodalOfficerDept: project.BP.nodalOfficerDept || null,
+        prismId: project.BP?.prismId || "",
+        deptName: project.BP?.deptName || "",
+        url: project.BP?.url || "",
+        publicIp: project.BP?.publicIp || "",
+        HOD: project.BP?.HOD || "",
+        nodalOfficerNIC: project.BP?.nodalOfficerNIC || {
+          name: "",
+          empCode: "",
+          mobile: "",
+          email: "",
+        },
+        nodalOfficerDept: project.BP?.nodalOfficerDept || {
+          name: "",
+          designation: "",
+          mobile: "",
+          email: "",
+        },
       },
       SA: {
-        securityAudit: project.SA.securityAudit || [],
+        securityAudit: project.SA?.securityAudit || [],
       },
       Infra: {
-        typeOfServer: project.Infra.typeOfServer || null,
-        location: project.Infra.location || null,
-        deployment: project.Infra.deployment || null,
-        dataCentre: project.Infra.dataCentre || null,
-        gitUrls: project.Infra.gitUrls || [],
-        vaRecords: project.Infra.vaRecords || [],
-        additionalInfra: project.Infra.additionalInfra || [],
+        typeOfServer: project.Infra?.typeOfServer || "",
+        location: project.Infra?.location || "",
+        deployment: project.Infra?.deployment || "",
+        dataCentre: project.Infra?.dataCentre || "",
+        gitUrls: project.Infra?.gitUrls || [],
+        vaRecords: project.Infra?.vaRecords || [],
+        additionalInfra: project.Infra?.additionalInfra || [],
       },
       TS: {
-        frontend: project.TS.frontend || [],
-        framework: project.TS.framework || null,
-        database: project.TS.database || [],
-        os: project.TS.os || [],
-        osVersion: project.TS.osVersion || [],
-        repoUrls: project.TS.repoUrls || [],
+        frontend: project.TS?.frontend || [],
+        framework: project.TS?.framework || [],
+        database: project.TS?.database || [],
+        os: project.TS?.os || [],
+        osVersion: project.TS?.osVersion || [],
+        repoUrls: project.TS?.repoUrls || [],
       },
-      createdAt: project.createdAt,
+      TLS: {
+        tlsInfo,
+      },
+      DR: {
+        drLocation: project.DR?.drLocation || "",
+        drStatus: project.DR?.drStatus || "",
+        lastDrTestDate: project.DR?.lastDrTestDate
+          ? (project.DR.lastDrTestDate instanceof Date
+              ? project.DR.lastDrTestDate.toISOString()
+              : project.DR.lastDrTestDate.$date || project.DR.lastDrTestDate || "")
+          : "",
+        remarks: project.DR?.remarks || "",
+        gitUrls: project.DR?.gitUrls || [],
+        vaRecords: drVaRecords,
+      },
+      createdAt: project.createdAt
+        ? (project.createdAt instanceof Date
+            ? project.createdAt.toISOString()
+            : project.createdAt.$date || project.createdAt || "")
+        : "",
     };
 
     res.status(200).json(response);
@@ -421,8 +695,6 @@ async function getProjectDetailsByName(req, res) {
     });
   }
 }
-
-
 async function getDashboardByType(req, res) {
   try {
     const db = getDb();
@@ -623,9 +895,7 @@ async function filterByDepartment(req, res) {
     const data = await getFilteredDashboard(matchStage);
 
     if (!data.length) {
-      return res
-        .status(404)
-        .json({ error: "No assets found for this department" });
+      return res.status(404).json({ error: "No assets found for this department" });
     }
 
     res.status(200).json(data);
@@ -649,9 +919,7 @@ async function filterByDataCenter(req, res) {
     const data = await getFilteredDashboard(matchStage);
 
     if (!data.length) {
-      return res
-        .status(404)
-        .json({ error: "No assets found for this data center" });
+      return res.status(404).json({ error: "No assets found for this data center" });
     }
 
     res.status(200).json(data);
@@ -662,7 +930,6 @@ async function filterByDataCenter(req, res) {
       .json({ error: "Internal Server Error", details: error.message });
   }
 }
-
 
 async function getFilteredDashboard(matchStage) {
   const db = getDb();
@@ -678,33 +945,12 @@ async function getFilteredDashboard(matchStage) {
         deptName: "$BP.deptName",
         HOD: "$BP.HOD",
         employeeId: "$BP.employeeId",
+        securityAudits: "$SA.securityAudit",
         dataCentre: "$Infra.dataCentre",
-        createdAt: 1,
-        securityAudits: {
-          $slice: [
-            {
-              $filter: {
-                input: {
-                  $sortArray: {
-                    input: "$SA.securityAudit",
-                    sortBy: { auditDate: -1 } // sort by latest auditDate
-                  }
-                },
-                as: "audit",
-                cond: { $ne: ["$$audit", null] }
-              }
-            },
-            1 // Only take the first (latest) entry
-          ]
-        }
+        createdAt: 1
       }
     },
-    {
-      $unwind: {
-        path: "$securityAudits",
-        preserveNullAndEmptyArrays: true
-      }
-    },
+    { $unwind: { path: "$securityAudits", preserveNullAndEmptyArrays: true } },
     {
       $project: {
         assetsId: 1,
@@ -721,16 +967,14 @@ async function getFilteredDashboard(matchStage) {
         auditStatus: "$securityAudits.auditStatus",
         sslStatus: "$securityAudits.sslStatus",
         dataCentre: 1,
-        createdAt: 1,
+        createdAt: 1
       }
     },
-    { $sort: { auditDate: -1 } } // optional sort to show latest audits first
+    { $sort: { expireDate: 1 } }
   ];
 
   return db.collection("Assets").aggregate(pipeline).toArray();
-}
-
-
+};
 
 async function filterByPrismId(req, res) {
   try {
@@ -743,20 +987,15 @@ async function filterByPrismId(req, res) {
     const data = await getFilteredDashboard(matchStage);
 
     if (!data.length) {
-      return res
-        .status(404)
-        .json({ error: "No assets found for this Prism ID" });
+      return res.status(404).json({ error: "No assets found for this Prism ID" });
     }
 
     res.status(200).json(data);
   } catch (error) {
     console.error("filterByPrismId error:", error);
-    res
-      .status(500)
-      .json({ error: "Internal Server Error", details: error.message });
+    res.status(500).json({ error: "Internal Server Error", details: error.message });
   }
-}
-
+};
 
 async function assignHodProject(req, res) {
   try {
@@ -1269,114 +1508,6 @@ async function getFilteredDashboard(matchStage) {
 
   return db.collection("Assets").aggregate(pipeline).toArray();
 };
-
-async function filterByPrismId  (req, res) {
-  try {
-    const prismId = req.params.prismId;
-    if (!prismId) {
-      return res.status(400).json({ error: "Prism ID is required" });
-    }
-
-    const matchStage = { "BP.prismId": prismId };
-    const data = await getFilteredDashboard(matchStage);
-
-    if (!data.length) {
-      return res.status(404).json({ error: "No assets found for this Prism ID" });
-    }
-
-    res.status(200).json(data);
-  } catch (error) {
-    console.error("filterByPrismId error:", error);
-    res.status(500).json({ error: "Internal Server Error", details: error.message });
-  }
-};
-
-async function filterByDepartment (req, res) {
-  try {
-    const deptName = req.params.deptName;
-    if (!deptName) {
-      return res.status(400).json({ error: "Department name is required" });
-    }
-
-    const matchStage = { "BP.deptName": deptName };
-    const data = await getFilteredDashboard(matchStage);
-
-    if (!data.length) {
-      return res.status(404).json({ error: "No assets found for this department" });
-    }
-
-    res.status(200).json(data);
-  } catch (error) {
-    console.error("filterByDepartment error:", error);
-    res.status(500).json({ error: "Internal Server Error", details: error.message });
-  }
-};
-
-async function filterByDataCenter (req, res) {
-  try {
-    const dataCenter = req.params.dataCenter;
-    if (!dataCenter) {
-      return res.status(400).json({ error: "Data center name is required" });
-    }
-
-    const matchStage = { "Infra.dataCentre": dataCenter };
-    const data = await getFilteredDashboard(matchStage);
-
-    if (!data.length) {
-      return res.status(404).json({ error: "No assets found for this data center" });
-    }
-
-    res.status(200).json(data);
-  } catch (error) {
-    console.error("filterByDataCenter error:", error);
-    res.status(500).json({ error: "Internal Server Error", details: error.message });
-  }
-};
-
-async function getFilteredDashboard(matchStage) {
-  const db = getDb();
-
-  const pipeline = [
-    { $match: matchStage },
-    {
-      $project: {
-        _id: 0,
-        assetsId: 1,
-        projectName: "$BP.name",
-        prismId: "$BP.prismId",
-        deptName: "$BP.deptName",
-        HOD: "$BP.HOD",
-        employeeId: "$BP.employeeId",
-        securityAudits: "$SA.securityAudit",
-        dataCentre: "$Infra.dataCentre",
-        createdAt: 1
-      }
-    },
-    { $unwind: { path: "$securityAudits", preserveNullAndEmptyArrays: true } },
-    {
-      $project: {
-        assetsId: 1,
-        projectName: 1,
-        prismId: 1,
-        deptName: 1,
-        HOD: 1,
-        employeeId: 1,
-        auditDate: "$securityAudits.auditDate",
-        expireDate: "$securityAudits.expireDate",
-        tlsNextExpiry: "$securityAudits.tlsNextExpiry",
-        sslLabScore: "$securityAudits.sslLabScore",
-        certificate: "$securityAudits.certificate",
-        auditStatus: "$securityAudits.auditStatus",
-        sslStatus: "$securityAudits.sslStatus",
-        dataCentre: 1,
-        createdAt: 1
-      }
-    },
-    { $sort: { expireDate: 1 } }
-  ];
-
-  return db.collection("Assets").aggregate(pipeline).toArray();
-}
 
 async function filterByPrismId  (req, res) {
   try {
