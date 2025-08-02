@@ -12,7 +12,8 @@ const AssetsController = require('../Controllers/assets.controller');
 const path = require("path");
   // const upload = require('../middlewares/pdfUpload');
  
-
+router.get('/getOs',AssetsController.getOs);
+router.get('/frontend', AssetsController.getFrontend);
 
 // Asset routes
 router.post('/assets/createAsset', upload.single('certificate'), AssetsController.createAsset);
@@ -74,11 +75,7 @@ router.get('/dashboard/projectDetails/:projectName', AssetsController.getProject
 router.get('/dashboard/by-type/:employeeId', AssetsController.getDashboardByType);
 router.put('/assets/update/by-project-name/:projectName', upload.single('certificate'), AssetsController.updateAssetByProjectName);
 
-// Filter routes
-// router.get('/dashboard/filter/department/:deptName', AssetsController.filterByDepartment);
-// router.get('/dashboard/filter/department/:deptName/employee/:employeeId', AssetsController.filterByDepartment);
-// router.get('/dashboard/department/filter', AssetsController.filterByDepartment);
-// router.get('/dashboard/filter/department/:deptName/employee/:employeeId',AssetsController.filterByDepartment);
+
 router.get('/dashboard/filter/department/:deptName/employee/:employeeId', AssetsController.filterByDepartment);
 
 router.get('/dashboard/filter/datacenter/:dataCenter', AssetsController.filterByDataCenter);

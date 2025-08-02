@@ -808,6 +808,23 @@ async function updateAssetByProjectName(req, res) {
   }
 }
 
+async function getOs(req, res) {
+  try {
+    const db = getDb(); // Your DB connection method
+    const collection = db.collection("os"); // Collection name for OS data
+
+    const data = await collection.find({}, { projection: { os: 1, version: 1, _id: 0 } }).toArray();
+
+    if (!data.length) {
+      return res.status(404).json({ message: "No OS versions found" });
+    }
+
+    res.status(200).json(data);
+  } catch (err) {
+    console.error("Error fetching OS versions:", err);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+}
 
 
 
@@ -843,50 +860,6 @@ async function filterByDataCenter(req, res) {
   }
 }
 
-// async function getFilteredDashboard(matchStage) {
-//   const db = getDb();
-
-//   const pipeline = [
-//     { $match: matchStage },
-//     {
-//       $project: {
-//         _id: 0,
-//         assetsId: 1,
-//         projectName: "$BP.name",
-//         prismId: "$BP.prismId",
-//         deptName: "$BP.deptName",
-//         HOD: "$BP.HOD",
-//         employeeId: "$BP.employeeId",
-//         securityAudits: "$SA.securityAudit",
-//         dataCentre: "$Infra.dataCentre",
-//         createdAt: 1
-//       }
-//     },
-//     { $unwind: { path: "$securityAudits", preserveNullAndEmptyArrays: true } },
-//     {
-//       $project: {
-//         assetsId: 1,
-//         projectName: 1,
-//         prismId: 1,
-//         deptName: 1,
-//         HOD: 1,
-//         employeeId: 1,
-//         auditDate: "$securityAudits.auditDate",
-//         expireDate: "$securityAudits.expireDate",
-//         tlsNextExpiry: "$securityAudits.tlsNextExpiry",
-//         sslLabScore: "$securityAudits.sslLabScore",
-//         certificate: "$securityAudits.certificate",
-//         auditStatus: "$securityAudits.auditStatus",
-//         sslStatus: "$securityAudits.sslStatus",
-//         dataCentre: 1,
-//         createdAt: 1
-//       }
-//     },
-//     { $sort: { expireDate: 1 } }
-//   ];
-
-//   return db.collection("Assets").aggregate(pipeline).toArray();
-// };
 
 async function getFilteredDashboard(matchStage) {
   const db = getDb();
@@ -1456,6 +1429,25 @@ async function filterByDepartment(req, res) {
   }
 }
 
+async function getFrontend(req, res) {
+  try {
+    const db = getDb(); // Ensure this returns your MongoDB instance
+    const collection = db.collection("frontend");
+
+    const data = await collection.find({}, { projection: { technology: 1, version: 1, _id: 0 } }).toArray();
+
+    if (!data.length) {
+      return res.status(404).json({ message: "No frontend technologies found" });
+    }
+
+    res.status(200).json(data);
+  } catch (err) {
+    console.error("Error fetching frontend technologies:", err);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
+
 
 
 
@@ -1494,7 +1486,8 @@ module.exports = {
   getAuditExpiryByAssetId,
   getAuditExpiryNotificationsByEmployee,
   getNotificationByEmployeeId,
-  getAuditExpiryForUser
-   
+  getAuditExpiryForUser,
+  getOs,
+  getFrontend
 
 };
