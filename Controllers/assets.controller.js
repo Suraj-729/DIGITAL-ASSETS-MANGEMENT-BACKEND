@@ -3,7 +3,6 @@ const { getDb } = require("../Db/Db");
 const moment = require("moment");
 const { ObjectId } = require("mongodb");
 
-
 async function createAsset(req, res) {
   try {
     // Parse the JSON strings from multipart/form-data
@@ -31,7 +30,6 @@ async function createAsset(req, res) {
   }
 }
 
-
 async function getAsset(req, res) {
   try {
     const { assetsId } = req.params;
@@ -41,18 +39,29 @@ async function getAsset(req, res) {
     if (!asset) return res.status(404).json({ error: "Asset not found" });
 
     res.status(200).json({
-      BP: asset.BP,
-      SA: asset.SA,
-      Infra: asset.Infra,
-      TS: asset.TS,
-    });
+    //   BP: asset.BP,
+    //   SA: asset.SA,
+    //   Infra: asset.Infra,
+    //   TS: asset.TS,
+    //   TLS: {
+    //     tlsInfo: asset.TLS ? Object.values(asset.TLS) : []
+    //   }, 
+    //    DR: asset.DR
+    // });
+    BP: asset.BP || {},
+    SA: asset.SA || {},
+    Infra: asset.Infra || {},
+    TS: asset.TS || {},
+    TLS: {
+      tlsInfo: asset.TLS ? Object.values(asset.TLS) : []
+    },
+    DR: asset.DR || {}
+  });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Failed to get asset" });
   }
 }
-
-
 
 async function deleteAsset(req, res) {
   try {
