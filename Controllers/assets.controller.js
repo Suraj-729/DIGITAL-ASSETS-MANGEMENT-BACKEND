@@ -361,10 +361,6 @@ async function getDashboardAllProjectBySIO(req, res) {
   }
 }
 
-// async function getProjectDetailsByName(req, res) {
-//   try {
-//     const db = getDb();
-//     const { projectName } = req.params;
 
 //     if (!projectName) {
 //       return res.status(400).json({ error: "Project name is required" });
@@ -1063,243 +1059,218 @@ async function getProjectAssignData(req, res) {
 }
 
 
-const getAuditExpiryNotificationsByEmployee = async (req, res) => {
-  try {
-    const { employeeId } = req.params;
-    const db = getDb();
-    // const query = employeeId === "2086" ? {} : { "BP.employeeId": employeeId };
-    const isAdmin = employeeId === "2086";
-    const query = isAdmin ? {} : { "BP.employeeId": employeeId };
-    const assets = await db.collection("Assets").find({ "BP.employeeId": employeeId }).toArray();
-
-    const now = new Date();
-    const warningDays = 5;
-    const warningThreshold = new Date(now);
-    warningThreshold.setDate(warningThreshold.getDate() + warningDays);
-
-    const notifications = [];
-
-    assets.forEach((asset) => {
-      const audits = asset?.SA?.securityAudit || [];
-
-      audits.forEach((audit) => {
-        const expireDate = audit?.expireDate ? new Date(audit.expireDate) : null;
-        if (!expireDate) return;
-
-        if (expireDate <= warningThreshold) {
-          notifications.push({
-            employeeId,
-            assetsId: asset.assetsId,
-            typeOfAudit: audit.typeOfAudit,
-            auditAgency: audit.auditingAgency,
-            expireDate: audit.expireDate,
-            daysLeft: Math.ceil((expireDate - now) / (1000 * 60 * 60 * 24)),
-            message:
-              expireDate < now
-                ? `Audit certificate already expired for asset ${asset.assetsId}`
-                : `Audit certificate is expiring soon for asset ${asset.assetsId}`
-          });
-        }
-      });
-    });
-
-    return res.status(200).json({
-      employeeId,
-      totalNotifications: notifications.length,
-      notifications
-    });
-  } catch (error) {
-    console.error("Error generating notifications:", error);
-    return res.status(500).json({ message: "Internal server error" });
-  }
-};
-
-const getAuditExpiryByAssetId = async (req, res) => {
-  try {
-    const { assetsId } = req.params;
-    const db = getDb();
-
-    const asset = await db.collection("Assets").findOne({ assetsId: assetsId });
-
-    if (!asset) {
-      return res.status(404).json({ message: "Asset not found" });
-    }
-
-    const now = new Date();
-    const warningDays = 5;
-    const warningThreshold = new Date(now);
-    warningThreshold.setDate(warningThreshold.getDate() + warningDays);
-
-    const notifications = [];
-
-    const audits = asset?.SA?.securityAudit || [];
-
-    audits.forEach((audit) => {
-      const expireDate = audit?.expireDate ? new Date(audit.expireDate) : null;
-      if (!expireDate) return;
-
-      if (expireDate <= warningThreshold) {
-        notifications.push({
-          employeeId: asset?.BP?.employeeId || "Unknown",
-          assetsId: asset.assetsId,
-          typeOfAudit: audit.typeOfAudit,
-          auditAgency: audit.auditingAgency,
-          expireDate: audit.expireDate,
-          daysLeft: Math.ceil((expireDate - now) / (1000 * 60 * 60 * 24)),
-          message:
-            expireDate < now
-              ? `Audit certificate already expired for asset ${asset.assetsId}`
-              : `Audit certificate is expiring soon for asset ${asset.assetsId}`
-        });
-      }
-    });
-
-    return res.status(200).json({
-      assetsId,
-      totalNotifications: notifications.length,
-      notifications
-    });
-  } catch (error) {
-    console.error("Error checking audit expiry by asset ID:", error);
-    return res.status(500).json({ message: "Internal server error" });
-  }
-};
 
 
-const getNotificationByEmployeeId = async (req, res) => {
-  try {
-    const { employeeId } = req.params;
-    const db = getDb();
 
-    const user = await db.collection("Users").findOne({ employeeId });
+// const getAuditExpiryForUser = async (req, res) => {
+//   try {
+//     const { employeeId } = req.params;
+//     const db = getDb();
 
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
+//     const user = await db.collection("Users").findOne({ employeeId });
+//     if (!user) return res.status(404).json({ error: "User not found" });
 
-    const isAdmin = user.employeeType === "Admin";
-    const assets = isAdmin
-      ? await db.collection("Assets").find({}).toArray()
-      : await db.collection("Assets").find({ "BP.employeeId": employeeId }).toArray();
+//     const userType = (user.employeeType || "").toLowerCase(); // 🔥 Normalize
+//     const assets = await db.collection("Assets").find({}).toArray();
 
-    const now = new Date();
-    const warningDays = 5;
-    const warningThreshold = new Date(now);
-    warningThreshold.setDate(warningThreshold.getDate() + warningDays);
+//     const now = new Date();
+//     const notifications = [];
 
-    const notifications = [];
+//     for (const asset of assets) {
+//       const assetId = asset.assetsId?.trim();
+//       const bp = asset.BP || {};
 
-    assets.forEach((asset) => {
-      const audits = asset?.SA?.securityAudit || [];
+//       // 🔍 User access logic
+//       const isPM = userType === "pm" && bp?.nodalOfficerNIC?.empCode === employeeId;
+//       const isHOD = userType === "hod" && bp?.employeeId === employeeId;
+//       const isAdmin = userType === "admin"; // ✅ Case-insensitive
 
-      audits.forEach((audit) => {
-        const expireDate = audit?.expireDate ? new Date(audit.expireDate) : null;
-        if (!expireDate) return;
+//       if (!isPM && !isHOD && !isAdmin) continue; // 🔒 Skip unauthorized assets
 
-        if (expireDate <= warningThreshold) {
-          notifications.push({
-            employeeId: asset?.BP?.employeeId || "Unknown",
-            assetsId: asset.assetsId,
-            typeOfAudit: audit.typeOfAudit,
-            auditAgency: audit.auditingAgency,
-            expireDate: audit.expireDate,
-            daysLeft: Math.ceil((expireDate - now) / (1000 * 60 * 60 * 24)),
-            message:
-              expireDate < now
-                ? `Audit certificate already expired for asset ${asset.assetsId}`
-                : `Audit certificate is expiring soon for asset ${asset.assetsId}`
-          });
-        }
-      });
-    });
+//       // 🔍 Latest Security Audit
+//       let latestAudit = null;
+//       if (asset.SA?.securityAudit?.length) {
+//         latestAudit = asset.SA.securityAudit.reduce((latest, current) => {
+//           return new Date(current.expireDate) > new Date(latest.expireDate) ? current : latest;
+//         });
+//       }
 
-    return res.status(200).json({
-      employeeId,
-      totalNotifications: notifications.length,
-      notifications
-    });
+//       // 🔍 Latest TLS
+//       let latestTLS = null;
+//       if (asset.TLS?.tlsInfo?.length) {
+//         latestTLS = asset.TLS.tlsInfo.reduce((latest, current) => {
+//           return new Date(current.expiryDate) > new Date(latest.expiryDate) ? current : latest;
+//         });
+//       }
 
-  } catch (error) {
-    console.error("Error getting notifications:", error);
-    return res.status(500).json({ message: "Internal server error" });
-  }
-};
+//       // ⏰ Messages
+//       const messages = [];
+
+//       if (latestAudit) {
+//         const daysLeft = Math.ceil((new Date(latestAudit.expireDate) - now) / (1000 * 60 * 60 * 24));
+//         const auditMsg = daysLeft < 0
+//           ? `Security audit expired for asset ${assetId}`
+//           : daysLeft <= 7
+//             ? `Security audit is expiring soon for asset ${assetId}`
+//             : null;
+//         if (auditMsg) messages.push(auditMsg);
+//       }
+
+//       if (latestTLS) {
+//         const daysLeftTLS = Math.ceil((new Date(latestTLS.expiryDate) - now) / (1000 * 60 * 60 * 24));
+//         const tlsMsg = daysLeftTLS < 0
+//           ? `TLS certificate expired for asset ${assetId}`
+//           : daysLeftTLS <= 7
+//             ? `TLS certificate is expiring soon for asset ${assetId}`
+//             : null;
+//         if (tlsMsg) messages.push(tlsMsg);
+//       }
+
+//       if (messages.length) {
+//         notifications.push({
+//           assetId,
+//           messages,
+//         });
+//       }
+//     }
+
+//     res.json({
+//       employeeId,
+//       employeeType: user.employeeType,
+//       totalNotifications: notifications.length,
+//       notifications,
+//     });
+//   } catch (err) {
+//     console.error("Error in getAuditExpiryForUser:", err);
+//     res.status(500).json({ error: "Internal server error" });
+//   }
+// };
 
 const getAuditExpiryForUser = async (req, res) => {
   try {
     const { employeeId } = req.params;
     const db = getDb();
 
-    const now = new Date();
-    const warningDays = 5;
-    const warningThreshold = new Date(now);
-    warningThreshold.setDate(warningThreshold.getDate() + warningDays);
+    // ✅ Fetch user info
+    const user = await db.collection("Users").findOne({ employeeId });
+    if (!user) return res.status(404).json({ error: "User not found" });
 
+    const userType = user.employeeType?.toUpperCase();
+
+    // ✅ Fetch all assets
+    const assets = await db.collection("Assets").find({}).toArray();
+    const now = new Date();
     const notifications = [];
 
-    // Fetch the user to determine their role
-    const user = await db.collection("Users").findOne({ employeeId });
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    let query = {};
-
-    // Admin: sees all notifications
-    if (user.employeeType === "Admin") {
-      query = {}; // No filter, fetch all assets
-    }
-    // HOD: sees only assets where BP.deptName matches their HOD name
-    else if (user.employeeType === "HOD" && user.HOD) {
-      query = { "BP.deptName": user.HOD };
-    }
-    // PM: sees only assets where BP.employeeId matches
-    else if (user.employeeType === "PM") {
-      query = { "BP.employeeId": employeeId };
-    }
-    // Unknown role
-    else {
-      return res.status(403).json({ message: "Unauthorized or unrecognized role" });
-    }
-
-    const assets = await db.collection("Assets").find(query).toArray();
-
     for (const asset of assets) {
-      const audits = asset?.SA?.securityAudit || [];
+      const assetId = asset.assetsId?.trim();
+      const bp = asset.BP || {};
 
-      audits.forEach((audit) => {
-        const expireDate = audit?.expireDate ? new Date(audit.expireDate) : null;
-        if (!expireDate) return;
+      // ✅ User access type check
+      const isAdmin = userType === "ADMIN";
+      const isHOD = userType === "HOD" && bp.employeeId === employeeId;
+      const isPM = userType === "PM" && bp?.nodalOfficerNIC?.empCode === employeeId;
 
-        if (expireDate <= warningThreshold) {
-          notifications.push({
-            employeeId: asset?.BP?.employeeId || "Unknown",
-            assetsId: asset.assetsId,
-            typeOfAudit: audit.typeOfAudit,
-            auditAgency: audit.auditingAgency,
-            expireDate: audit.expireDate,
-            daysLeft: Math.ceil((expireDate - now) / (1000 * 60 * 60 * 24)),
-            message:
-              expireDate < now
-                ? `Audit certificate already expired for asset ${asset.assetsId}`
-                : `Audit certificate is expiring soon for asset ${asset.assetsId}`,
-          });
+      if (!isAdmin && !isHOD && !isPM) continue;
+
+      const messages = [];
+
+      // ✅ Latest Security Audit
+      if (asset.SA?.securityAudit?.length) {
+        const latestAudit = asset.SA.securityAudit.reduce((latest, current) =>
+          new Date(current.expireDate) > new Date(latest.expireDate) ? current : latest
+        );
+
+        if (latestAudit) {
+          const auditExpireDate = new Date(latestAudit.expireDate);
+          const daysLeft = Math.ceil((auditExpireDate - now) / (1000 * 60 * 60 * 24));
+
+          if (daysLeft < 0) {
+            messages.push({
+              type: "Security Audit",
+              status: "Expired",
+              expiredOn: auditExpireDate.toISOString().split("T")[0],
+              assetId,
+              message: `Security Audit expired for asset ${assetId} on ${auditExpireDate.toDateString()}`
+            });
+          } else if (daysLeft <= 7) {
+            messages.push({
+              type: "Security Audit",
+              status: "Expiring Soon",
+              expiresIn: `${daysLeft} day(s)`,
+              expireDate: auditExpireDate.toISOString().split("T")[0],
+              assetId,
+              message: `Security Audit for asset ${assetId} will expire in ${daysLeft} day(s) on ${auditExpireDate.toDateString()}`
+            });
+          }
         }
-      });
+      }
+
+      // ✅ Latest TLS Certificate
+      if (asset.TLS?.tlsInfo?.length) {
+        const latestTLS = asset.TLS.tlsInfo.reduce((latest, current) =>
+          new Date(current.expiryDate) > new Date(latest.expiryDate) ? current : latest
+        );
+
+        if (latestTLS) {
+          const tlsExpireDate = new Date(latestTLS.expiryDate);
+          const daysLeftTLS = Math.ceil((tlsExpireDate - now) / (1000 * 60 * 60 * 24));
+
+          if (daysLeftTLS < 0) {
+            messages.push({
+              type: "TLS Certificate",
+              status: "Expired",
+              expiredOn: tlsExpireDate.toISOString().split("T")[0],
+              assetId,
+              message: `TLS Certificate expired for asset ${assetId} on ${tlsExpireDate.toDateString()}`
+            });
+          } else if (daysLeftTLS <= 7) {
+            messages.push({
+              type: "TLS Certificate",
+              status: "Expiring Soon",
+              expiresIn: `${daysLeftTLS} day(s)`,
+              expireDate: tlsExpireDate.toISOString().split("T")[0],
+              assetId,
+              message: `TLS Certificate for asset ${assetId} will expire in ${daysLeftTLS} day(s) on ${tlsExpireDate.toDateString()}`
+            });
+          }
+        }
+      }
+
+      // ✅ Combine messages for this asset
+      if (messages.length > 0) {
+        notifications.push({
+          assetId,
+          messages
+        });
+      }
     }
 
-    return res.status(200).json({
+    return res.json({
       employeeId,
-      employeeType: user.employeeType,
-      totalNotifications: notifications.length,
+      employeeType: userType,
+      totalNotifications: notifications.reduce((count, notif) => count + notif.messages.length, 0),
       notifications,
     });
-  } catch (error) {
-    console.error("Error fetching audit expiry notifications:", error);
-    return res.status(500).json({ message: "Internal server error" });
+
+  } catch (err) {
+    console.error("Error in getAuditExpiryForUser:", err);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 async function getProjectsAssignedToPM(req, res) {
   try {
@@ -1483,9 +1454,7 @@ module.exports = {
   // getAssetByProjectName, // Make sure this exists!
   // getAllProjects         // Make sure this exists!
 
-  getAuditExpiryByAssetId,
-  getAuditExpiryNotificationsByEmployee,
-  getNotificationByEmployeeId,
+
   getAuditExpiryForUser,
   getOs,
   getFrontend
