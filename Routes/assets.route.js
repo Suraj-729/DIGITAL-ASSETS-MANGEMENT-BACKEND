@@ -100,6 +100,7 @@ router.post("/upload-va-report", upload.single("vaReport"), (req, res) => {
   if (!req.file) return res.status(400).json({ error: "No file uploaded" });
   res.status(201).json({ filename: req.file.filename });
 });
+
 router.get("/va-reports/:filename", (req, res) => {
   const filename = req.params.filename;
   const filePath = path.join(__dirname, "..", "uploads", filename);
