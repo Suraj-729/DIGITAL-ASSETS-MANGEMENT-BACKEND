@@ -831,12 +831,6 @@ async function getOs(req, res) {
 
 
 
-
-
-
-
-
-
 async function filterByDataCenter(req, res) {
   try {
     const dataCenter = req.params.dataCenter;
