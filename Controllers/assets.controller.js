@@ -1052,94 +1052,6 @@ async function getProjectAssignData(req, res) {
   }
 }
 
-
-
-
-
-// const getAuditExpiryForUser = async (req, res) => {
-//   try {
-//     const { employeeId } = req.params;
-//     const db = getDb();
-
-//     const user = await db.collection("Users").findOne({ employeeId });
-//     if (!user) return res.status(404).json({ error: "User not found" });
-
-//     const userType = (user.employeeType || "").toLowerCase(); // 🔥 Normalize
-//     const assets = await db.collection("Assets").find({}).toArray();
-
-//     const now = new Date();
-//     const notifications = [];
-
-//     for (const asset of assets) {
-//       const assetId = asset.assetsId?.trim();
-//       const bp = asset.BP || {};
-
-//       // 🔍 User access logic
-//       const isPM = userType === "pm" && bp?.nodalOfficerNIC?.empCode === employeeId;
-//       const isHOD = userType === "hod" && bp?.employeeId === employeeId;
-//       const isAdmin = userType === "admin"; // ✅ Case-insensitive
-
-//       if (!isPM && !isHOD && !isAdmin) continue; // 🔒 Skip unauthorized assets
-
-//       // 🔍 Latest Security Audit
-//       let latestAudit = null;
-//       if (asset.SA?.securityAudit?.length) {
-//         latestAudit = asset.SA.securityAudit.reduce((latest, current) => {
-//           return new Date(current.expireDate) > new Date(latest.expireDate) ? current : latest;
-//         });
-//       }
-
-//       // 🔍 Latest TLS
-//       let latestTLS = null;
-//       if (asset.TLS?.tlsInfo?.length) {
-//         latestTLS = asset.TLS.tlsInfo.reduce((latest, current) => {
-//           return new Date(current.expiryDate) > new Date(latest.expiryDate) ? current : latest;
-//         });
-//       }
-
-//       // ⏰ Messages
-//       const messages = [];
-
-//       if (latestAudit) {
-//         const daysLeft = Math.ceil((new Date(latestAudit.expireDate) - now) / (1000 * 60 * 60 * 24));
-//         const auditMsg = daysLeft < 0
-//           ? `Security audit expired for asset ${assetId}`
-//           : daysLeft <= 7
-//             ? `Security audit is expiring soon for asset ${assetId}`
-//             : null;
-//         if (auditMsg) messages.push(auditMsg);
-//       }
-
-//       if (latestTLS) {
-//         const daysLeftTLS = Math.ceil((new Date(latestTLS.expiryDate) - now) / (1000 * 60 * 60 * 24));
-//         const tlsMsg = daysLeftTLS < 0
-//           ? `TLS certificate expired for asset ${assetId}`
-//           : daysLeftTLS <= 7
-//             ? `TLS certificate is expiring soon for asset ${assetId}`
-//             : null;
-//         if (tlsMsg) messages.push(tlsMsg);
-//       }
-
-//       if (messages.length) {
-//         notifications.push({
-//           assetId,
-//           messages,
-//         });
-//       }
-//     }
-
-//     res.json({
-//       employeeId,
-//       employeeType: user.employeeType,
-//       totalNotifications: notifications.length,
-//       notifications,
-//     });
-//   } catch (err) {
-//     console.error("Error in getAuditExpiryForUser:", err);
-//     res.status(500).json({ error: "Internal server error" });
-//   }
-// };
-
 const getAuditExpiryForUser = async (req, res) => {
   try {
     const { employeeId } = req.params;
@@ -1150,6 +1062,7 @@ const getAuditExpiryForUser = async (req, res) => {
     if (!user) return res.status(404).json({ error: "User not found" });
 
     const userType = user.employeeType?.toUpperCase();
+    
 
     // ✅ Fetch all assets
     const assets = await db.collection("Assets").find({}).toArray();
@@ -1252,18 +1165,6 @@ const getAuditExpiryForUser = async (req, res) => {
     return res.status(500).json({ error: "Internal server error" });
   }
 };
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 async function getProjectsAssignedToPM(req, res) {
