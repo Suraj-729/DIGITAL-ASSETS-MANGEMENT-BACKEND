@@ -312,6 +312,9 @@ async function getDashboardAllProjectBySIO(req, res) {
           deptName: "$BP.deptName",
           projectName: "$BP.name",
           securityAudits: "$SA.securityAudit",
+          tlsInfo: {
+            expiryDate: "$TLS.tlsInfo.expiryDate",
+          },
         },
       },
       {
@@ -329,7 +332,7 @@ async function getDashboardAllProjectBySIO(req, res) {
           projectName: 1,
           auditDate: "$securityAudits.auditDate",
           expireDate: "$securityAudits.expireDate",
-          tlsNextExpiry: "$securityAudits.tlsNextExpiry",
+          tlsNextExpiry: "$tlsInfo.expiryDate",
           sslLabScore: "$securityAudits.sslLabScore",
         },
       },
@@ -361,79 +364,6 @@ async function getDashboardAllProjectBySIO(req, res) {
   }
 }
 
-
-//     if (!projectName) {
-//       return res.status(400).json({ error: "Project name is required" });
-//     }
-
-//     const project = await db.collection("Assets").findOne(
-//       { "BP.name": { $regex: new RegExp(`^${projectName}$`, "i") } },
-//       {
-//         projection: {
-//           _id: 0,
-//           assetsId: 1,
-//           BP: 1,
-//           SA: 1,
-//           Infra: 1,
-//           TS: 1,
-//           DR:1,
-//           TLS:1,
-//           createdAt: 1,
-//         },
-//       }
-//     );
-
-//     if (!project) {
-//       return res.status(404).json({ error: "Project not found" });
-//     }
-
-//     // Format the response to match your document structure
-//     const response = {
-//       assetsId: project.assetsId,
-//       projectName: project.BP.name,
-//       BP: {
-//         prismId: project.BP.prismId,
-//         deptName: project.BP.deptName,
-//         url: project.BP.url,
-//         publicIp: project.BP.publicIp,
-//         HOD: project.BP.HOD,
-//         nodalOfficerNIC: project.BP.nodalOfficerNIC || null,
-//         nodalOfficerDept: project.BP.nodalOfficerDept || null,
-//       },
-//       SA: {
-//         securityAudit: project.SA.securityAudit || [],
-//       },
-//       Infra: {
-//         typeOfServer: project.Infra.typeOfServer || null,
-//         location: project.Infra.location || null,
-//         deployment: project.Infra.deployment || null,
-//         dataCentre: project.Infra.dataCentre || null,
-//         gitUrls: project.Infra.gitUrls || [],
-//         vaRecords: project.Infra.vaRecords || [],
-//         additionalInfra: project.Infra.additionalInfra || [],
-//       },
-//       TS: {
-//         frontend: project.TS.frontend || [],
-//         framework: project.TS.framework || null,
-//         database: project.TS.database || [],
-//         os: project.TS.os || [],
-//         osVersion: project.TS.osVersion || [],
-//         repoUrls: project.TS.repoUrls || [],
-//       },
-//       TLS: project.TLS || {}, // <-- Add TLS section
-//       DR: project.DR || {},
-//       createdAt: project.createdAt,
-//     };
-
-//     res.status(200).json(response);
-//   } catch (error) {
-//     console.error("Error in getProjectDetailsByName:", error);
-//     res.status(500).json({
-//       error: "Failed to fetch project details",
-//       details: error.message,
-//     });
-//   }
-// }
 
 
 
@@ -889,7 +819,7 @@ async function getFilteredDashboard(matchStage) {
         employeeId: 1,
         auditDate: "$securityAudits.auditDate",
         expireDate: "$securityAudits.expireDate",
-        tlsNextExpiry: "$securityAudits.tlsNextExpiry",
+        tlsNextExpiry: "$tlsInfo.expiryDate",
         sslLabScore: "$securityAudits.sslLabScore",
         certificate: "$securityAudits.certificate",
         auditStatus: "$securityAudits.auditStatus",
@@ -1223,18 +1153,45 @@ async function getDatabaseList(req, res) {
 
 
 
-async function filterByDataCenter (req, res) {
+// async function filterByDataCenter (req, res) {
+//   try {
+//     const dataCenter = req.params.dataCenter;
+//     if (!dataCenter) {
+//       return res.status(400).json({ error: "Data center name is required" });
+//     }
+
+//     const matchStage = { "Infra.dataCentre": dataCenter };
+//     const data = await getFilteredDashboard(matchStage);
+
+//     if (!data.length) {
+//       return res.status(404).json({ error: "No assets found for this data center" });
+//     }
+
+//     res.status(200).json(data);
+//   } catch (error) {
+//     console.error("filterByDataCenter error:", error);
+//     res.status(500).json({ error: "Internal Server Error", details: error.message });
+//   }
+// };
+
+async function filterByDataCenter(req, res) {
   try {
-    const dataCenter = req.params.dataCenter;
-    if (!dataCenter) {
-      return res.status(400).json({ error: "Data center name is required" });
+    const { dataCenter, employeeId } = req.params;
+
+    if (!dataCenter || !employeeId) {
+      return res.status(400).json({ error: "Data center name and Employee ID are required." });
     }
 
-    const matchStage = { "Infra.dataCentre": dataCenter };
+    // Optional: Trim and case-insensitive match
+    const matchStage = {
+      "Infra.dataCentre": { $regex: new RegExp(`^${dataCenter}$`, "i") },
+      "BP.employeeId": employeeId.trim()
+    };
+
     const data = await getFilteredDashboard(matchStage);
 
     if (!data.length) {
-      return res.status(404).json({ error: "No assets found for this data center" });
+      return res.status(404).json({ error: "No assets found for this data center and employee." });
     }
 
     res.status(200).json(data);
@@ -1242,20 +1199,45 @@ async function filterByDataCenter (req, res) {
     console.error("filterByDataCenter error:", error);
     res.status(500).json({ error: "Internal Server Error", details: error.message });
   }
-};
+}
 
+// async function filterByPrismId(req, res) {
+//   try {
+//     const prismId = req.params.prismId;
+//     if (!prismId) {
+//       return res.status(400).json({ error: "Prism ID is required" });
+//     }
+
+//     const matchStage = { "BP.prismId": prismId };
+//     const data = await getFilteredDashboard(matchStage);
+
+//     if (!data.length) {
+//       return res.status(404).json({ error: "No assets found for this Prism ID" });
+//     }
+
+//     res.status(200).json(data);
+//   } catch (error) {
+//     console.error("filterByPrismId error:", error);
+//     res.status(500).json({ error: "Internal Server Error", details: error.message });
+//   }
+// };
 async function filterByPrismId(req, res) {
   try {
-    const prismId = req.params.prismId;
-    if (!prismId) {
-      return res.status(400).json({ error: "Prism ID is required" });
+    const { prismId, employeeId } = req.params;
+
+    if (!prismId || !employeeId) {
+      return res.status(400).json({ error: "Prism ID and Employee ID are required." });
     }
 
-    const matchStage = { "BP.prismId": prismId };
+    const matchStage = {
+      "BP.prismId": prismId.trim(),
+      "BP.employeeId": employeeId.trim()
+    };
+
     const data = await getFilteredDashboard(matchStage);
 
     if (!data.length) {
-      return res.status(404).json({ error: "No assets found for this Prism ID" });
+      return res.status(404).json({ error: "No assets found for this Prism ID and employee." });
     }
 
     res.status(200).json(data);
@@ -1263,7 +1245,7 @@ async function filterByPrismId(req, res) {
     console.error("filterByPrismId error:", error);
     res.status(500).json({ error: "Internal Server Error", details: error.message });
   }
-};
+}
 
 
 

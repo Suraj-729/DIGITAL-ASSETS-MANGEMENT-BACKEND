@@ -71,8 +71,11 @@ router.put('/assets/update/by-project-name/:projectName', upload.single('certifi
 
 router.get('/dashboard/filter/department/:deptName/employee/:employeeId', AssetsController.filterByDepartment);
 
-router.get('/dashboard/filter/datacenter/:dataCenter', AssetsController.filterByDataCenter);
-router.get('/dashboard/filter/prismid/:prismId', AssetsController.filterByPrismId);
+// router.get('/dashboard/filter/datacenter/:dataCenter', AssetsController.filterByDataCenter);
+router.get('/dashboard/filter/datacenter/:dataCenter/employee/:employeeId', AssetsController.filterByDataCenter);
+
+// router.get('/dashboard/filter/prismid/:prismId', AssetsController.filterByPrismId);
+router.get('/dashboard/filter/prismid/:prismId/employee/:employeeId', AssetsController.filterByPrismId);
 
 
 
