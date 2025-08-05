@@ -3,11 +3,13 @@
 ---
 
 ## Endpoint
+
 `GET /dashboard/projectDetails/:projectName`
 
 ---
 
 ## Description
+
 This endpoint retrieves detailed information for a specific project. The search is performed using the project name, which is case-insensitive. The response aggregates various details about the project's business plan, security audits, infrastructure, technical stack, TLS certificates, and disaster recovery information.
 
 ---
@@ -16,18 +18,19 @@ This endpoint retrieves detailed information for a specific project. The search 
 
 **Path Parameters:**
 
-| Name | Type | Description | Required | Example |
-| :--- | :--- | :--- | :--- | :--- |
-| `projectName`| `string` | The name of the project to retrieve details for. | Yes | `MyProject` |
+| Name            | Type       | Description                                      | Required | Example       |
+| :-------------- | :--------- | :----------------------------------------------- | :------- | :------------ |
+| `projectName` | `string` | The name of the project to retrieve details for. | Yes      | `MyProject` |
 
 ---
 
 ## 📤 Response
 
 ### ✅ Success (200 OK)
+
 Returns a JSON object containing all the project's details. Dates are formatted as ISO 8601 strings.
 
-```json
+```
 {
   "assetsId": "string",
   "projectName": "string",
@@ -127,15 +130,16 @@ Returns a JSON object containing all the project's details. Dates are formatted 
 
 ### ❌ Errors
 
-| Status Code | Message | Reason |
-| :--- | :--- | :--- |
-| `400` | `Project name is required` | The `projectName` parameter was not provided in the URL. |
-| `404` | `Project not found` | No project with the given name was found in the database. |
-| `500` | `Failed to fetch project details` | An internal server error occurred during data retrieval. |
+| Status Code | Message                             | Reason                                                     |
+| :---------- | :---------------------------------- | :--------------------------------------------------------- |
+| `400`     | `Project name is required`        | The `projectName` parameter was not provided in the URL. |
+| `404`     | `Project not found`               | No project with the given name was found in the database.  |
+| `500`     | `Failed to fetch project details` | An internal server error occurred during data retrieval.   |
 
 ---
 
 ## ⚙️ Internal Logic (for developers)
+
 * Finds a project in the `Assets` collection by its `BP.name` field.
 * The search is case-insensitive, using a regular expression (`$regex`).
 * Uses a MongoDB projection to return a predefined set of fields.
@@ -145,5 +149,7 @@ Returns a JSON object containing all the project's details. Dates are formatted 
 ---
 
 ## Example cURL Request
+
 ```sh
 curl -X GET http://localhost:3000/dashboard/projectDetails/MyProjectName
+```
