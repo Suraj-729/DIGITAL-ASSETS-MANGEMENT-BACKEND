@@ -797,8 +797,15 @@ async function getFilteredDashboard(matchStage) {
         HOD: "$BP.HOD",
         employeeId: "$BP.employeeId",
         securityAudits: "$SA.securityAudit",
+        tlsInfo: "$TLS.tlsInfo",
         dataCentre: "$Infra.dataCentre",
         createdAt: 1
+      }
+    },
+    {
+      $unwind: {
+        path: "$tlsInfo", // ✅ unwind tlsInfo if it’s an array
+        preserveNullAndEmptyArrays: true
       }
     },
 
