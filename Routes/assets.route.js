@@ -1,6 +1,4 @@
 
-
-
 const express = require("express");
 const router = express.Router();
 const { GridFSBucket } = require("mongodb");
@@ -14,7 +12,8 @@ const AssetsController = require('../Controllers/assets.controller');
 const path = require("path");
   // const upload = require('../middlewares/pdfUpload');
  
-
+router.get('/getOs',AssetsController.getOs);
+router.get('/frontend', AssetsController.getFrontend);
 
 // Asset routes
 router.post('/assets/createAsset', upload.single('certificate'), AssetsController.createAsset);
@@ -26,28 +25,16 @@ router.put('/assets/update/infra/:assetsId', AssetsController.updateInfra);
 router.put('/assets/update/ts/:assetsId', AssetsController.updateTS);
 router.get('/assets/datacentre/:dataCentre', AssetsController.getAssetsByDataCentre);
 router.get('/assets/by-department/:deptName', AssetsController.getAssetsByDepartment);
-router.get('/dashboard/expiring/:employeeId', AssetsController.getExpiringCertsByEmployeeId);
-router.get('/notifications/expiring-certificates', AssetsController.getExpiringCertNotifications);
-router.get("/notifications/latest", AssetsController.getLatestNotifications);
-router.get("/notifications/all", AssetsController.getAllNotifications);
-router.post("/notifications/:id/read", AssetsController.markNotificationRead);
+// router.get('/dashboard/expiring/:employeeId', AssetsController.getExpiringCertsByEmployeeId);
+// router.get('/notifications/expiring-certificates', AssetsController.getExpiringCertNotifications);
+// router.get("/notifications/expiring-certificates/:assetsId", AssetsController.getExpiringCertByAssetsId);
 
-// GET all distinct project names
-router.get("/projects/all", async (req, res) => {
-  try {
-    const projectNames = await Asset.distinct("projectName");
-    res.json({ success: true, projects: projectNames });
-  } catch (error) {
-    console.error("Error fetching project names:", error);
-    res.status(500).json({ success: false, message: "Server error" });
-  }
-});
+router.get("/audit-expiry-alerts/:employeeId", AssetsController.getAuditExpiryNotificationsByEmployee);
 
-
-
-
-
-
+router.get("/audit-expiry-by-asset/:assetsId", AssetsController.getAuditExpiryByAssetId);
+// router.get("/notifications/:employeeId", AssetsController.getNotifications);
+router.get("/notifications/:employeeId", AssetsController.getNotificationByEmployeeId);
+router.get("/audit-expiry/:employeeId", AssetsController.getAuditExpiryForUser);
 
 router.get("/view-va-report/:filename", (req, res) => {
   const filename = decodeURIComponent(req.params.filename);
@@ -73,6 +60,9 @@ router.get("/view-va-report/:filename", (req, res) => {
 // Verification endpoint
 
 
+  
+  // module.exports = router;
+
 // User routes
 router.post('/users/login', UserController.login);
 router.post('/users/logout', UserController.logout);
@@ -85,10 +75,12 @@ router.get('/dashboard/projectDetails/:projectName', AssetsController.getProject
 router.get('/dashboard/by-type/:employeeId', AssetsController.getDashboardByType);
 router.put('/assets/update/by-project-name/:projectName', upload.single('certificate'), AssetsController.updateAssetByProjectName);
 
-// Filter routes
-router.get('/dashboard/filter/department/:deptName', AssetsController.filterByDepartment);
-router.get('/dashboard/filter/datacenter/:dataCenter', AssetsController.filterByDataCenter);
-router.get('/dashboard/filter/prismid/:prismId', AssetsController.filterByPrismId);
+
+router.get('/dashboard/filter/department/:deptName/employee/:employeeId', AssetsController.filterByDepartment);
+
+router.get('/dashboard/filter/datacenter/:dataCenter/employee/:employeeId', AssetsController.filterByDataCenter);
+router.get('/dashboard/filter/prismid/:prismId/employee/:employeeId', AssetsController.filterByPrismId);
+
 
 
 
@@ -110,26 +102,7 @@ router.post("/upload-va-report", upload.single("vaReport"), async (req, res) => 
   }
 });
 
-// ✅ View VA Report
-// router.get("/view-va-report/:filename", (req, res) => {
-//   const filename = decodeURIComponent(req.params.filename);
-//   const filePath = path.join(__dirname, "..", "uploads", filename);
 
-//   if (!fs.existsSync(filePath)) {
-//     return res.status(404).json({ error: "File not found" });
-//   }
-
-//   res.setHeader("Content-Type", "application/pdf");
-//   res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
-
-//   const fileStream = fs.createReadStream(filePath);
-//   fileStream.pipe(res);
-
-//   fileStream.on("error", (err) => {
-//     console.error("File stream error:", err);
-//     res.status(500).json({ error: "Error reading the file" });
-//   });
-// });
 
 router.post("/upload-va-report", upload.single("vaReport"), (req, res) => {
   if (!req.file) return res.status(400).json({ error: "No file uploaded" });
@@ -161,7 +134,6 @@ router.get("/view-va-report/:filename", (req, res) => {
 });
 
 
-
 router.get('/va-reports/:filename', (req, res) => {
   const filename = req.params.filename;
   const filePath = path.join(__dirname, '..', 'uploads', filename); // ← Make sure path is correct
@@ -174,12 +146,14 @@ router.get('/va-reports/:filename', (req, res) => {
   });
 });
 
+router.post('/addprojectbyhod',AssetsController.assignHodProject);
 
+router.get('/projectsAssignedByHOD/:employeeId',AssetsController.getProjectManagersAssignedByHOD);
+router.get('/allProjectManagers', AssetsController.getAllProjectManagers);
+
+router.get("/project-assignments/:empCode", AssetsController.getProjectAssignData);
+router.get("/project-assignments/by-pm/:empCode", AssetsController.getProjectsAssignedToPM);
+router.get("/databases", AssetsController.getDatabaseList);
 
 
 module.exports = router;
-
-
-
-
-
