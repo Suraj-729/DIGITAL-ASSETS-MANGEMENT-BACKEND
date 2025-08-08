@@ -69,7 +69,8 @@ router.get('/dashboard/by-type/:employeeId', AssetsController.getDashboardByType
 router.put('/assets/update/by-project-name/:projectName', upload.single('certificate'), AssetsController.updateAssetByProjectName);
 
 
-router.get('/dashboard/filter/department/:deptName/employee/:employeeId', AssetsController.filterByDepartment);
+// router.get('/dashboard/filter/department/:deptName/employee/:employeeId', AssetsController.filterByDepartment);
+router.get('/dashboard/filter/department/:deptName/employee/:employeeId/employeeType/:employeeType', AssetsController.filterByDepartment);
 
 // router.get('/dashboard/filter/datacenter/:dataCenter', AssetsController.filterByDataCenter);
 router.get('/dashboard/filter/datacenter/:dataCenter/employee/:employeeId', AssetsController.filterByDataCenter);
