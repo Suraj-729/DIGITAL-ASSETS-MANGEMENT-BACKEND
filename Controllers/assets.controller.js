@@ -1190,89 +1190,144 @@ async function getDatabaseList(req, res) {
 
 
 
-async function filterByDataCenter(req, res) {
-  try {
-    const { dataCenter, employeeId } = req.params;
-
-    if (!dataCenter || !employeeId) {
-      return res.status(400).json({ error: "Data center name and Employee ID are required." });
-    }
-
-    // Optional: Trim and case-insensitive match
-    const matchStage = {
-      "Infra.dataCentre": { $regex: new RegExp(`^${dataCenter}$`, "i") },
-      "BP.employeeId": employeeId.trim()
-    };
-
-    const data = await getFilteredDashboard(matchStage);
-
-    if (!data.length) {
-      return res.status(404).json({ error: "No assets found for this data center and employee." });
-    }
-
-    res.status(200).json(data);
-  } catch (error) {
-    console.error("filterByDataCenter error:", error);
-    res.status(500).json({ error: "Internal Server Error", details: error.message });
-  }
-}
-
-
-async function filterByPrismId(req, res) {
-  try {
-    const { prismId, employeeId } = req.params;
-
-    if (!prismId || !employeeId) {
-      return res.status(400).json({ error: "Prism ID and Employee ID are required." });
-    }
-
-    const matchStage = {
-      "BP.prismId": prismId.trim(),
-      "BP.employeeId": employeeId.trim()
-    };
-
-    const data = await getFilteredDashboard(matchStage);
-
-    if (!data.length) {
-      return res.status(404).json({ error: "No assets found for this Prism ID and employee." });
-    }
-
-    res.status(200).json(data);
-  } catch (error) {
-    console.error("filterByPrismId error:", error);
-    res.status(500).json({ error: "Internal Server Error", details: error.message });
-  }
-}
-
-
-
-
-
-// async function filterByDepartment(req, res) {
+// async function filterByDataCenter(req, res) {
 //   try {
-//     const { deptName, employeeId } = req.params;
+//     const { dataCenter, employeeId } = req.params;
 
-//     if (!deptName || !employeeId) {
-//       return res.status(400).json({ error: "Department name and Employee ID are required." });
+//     if (!dataCenter || !employeeId) {
+//       return res.status(400).json({ error: "Data center name and Employee ID are required." });
 //     }
 
+//     // Optional: Trim and case-insensitive match
 //     const matchStage = {
-//       "BP.deptName": deptName,
-//       "BP.employeeId": employeeId
+//       "Infra.dataCentre": { $regex: new RegExp(`^${dataCenter}$`, "i") },
+//       "BP.employeeId": employeeId.trim()
 //     };
 
 //     const data = await getFilteredDashboard(matchStage);
 
 //     if (!data.length) {
-//       return res.status(404).json({ error: "No assets found for this department and employee." });
+//       return res.status(404).json({ error: "No assets found for this data center and employee." });
 //     }
 
 //     res.status(200).json(data);
 //   } catch (error) {
-//     console.error("filterByDepartment error:", error);
+//     console.error("filterByDataCenter error:", error);
 //     res.status(500).json({ error: "Internal Server Error", details: error.message });
 //   }
 // }
+
+async function filterByDataCenter(req, res) {
+  try {
+    const { dataCenter, employeeId, employeeType } = req.params;
+
+    if (!dataCenter || !employeeId || !employeeType) {
+      return res.status(400).json({ 
+        error: "Data center name, Employee ID, and Employee Type are required." 
+      });
+    }
+
+    const matchStage = {
+      "Infra.dataCentre": { $regex: new RegExp(`^${dataCenter}$`, "i") }
+    };
+
+    if (employeeType === "PM") {
+      matchStage["BP.nodalOfficerNIC.empCode"] = employeeId.trim();
+    } else {
+      matchStage["BP.employeeId"] = employeeId.trim();
+    }
+
+    const data = await getFilteredDashboard(matchStage);
+
+    if (!data.length) {
+      return res.status(404).json({ 
+        error: "No assets found for this data center and employee." 
+      });
+    }
+
+    res.status(200).json(data);
+  } catch (error) {
+    console.error("filterByDataCenter error:", error);
+    res.status(500).json({ 
+      error: "Internal Server Error", 
+      details: error.message 
+    });
+  }
+}
+
+
+
+
+
+
+// async function filterByPrismId(req, res) {
+//   try {
+//     const { prismId, employeeId } = req.params;
+
+//     if (!prismId || !employeeId) {
+//       return res.status(400).json({ error: "Prism ID and Employee ID are required." });
+//     }
+
+//     const matchStage = {
+//       "BP.prismId": prismId.trim(),
+//       "BP.employeeId": employeeId.trim()
+//     };
+
+//     const data = await getFilteredDashboard(matchStage);
+
+//     if (!data.length) {
+//       return res.status(404).json({ error: "No assets found for this Prism ID and employee." });
+//     }
+
+//     res.status(200).json(data);
+//   } catch (error) {
+//     console.error("filterByPrismId error:", error);
+//     res.status(500).json({ error: "Internal Server Error", details: error.message });
+//   }
+// }
+
+
+async function filterByPrismId(req, res) {
+  try {
+    const { prismId, employeeId, employeeType } = req.params;
+
+    if (!prismId || !employeeId || !employeeType) {
+      return res.status(400).json({ 
+        error: "Prism ID, Employee ID, and Employee Type are required." 
+      });
+    }
+
+    const matchStage = {
+      "BP.prismId": prismId.trim()
+    };
+
+    if (employeeType === "PM") {
+      matchStage["BP.nodalOfficerNIC.empCode"] = employeeId.trim();
+    } else {
+      matchStage["BP.employeeId"] = employeeId.trim();
+    }
+
+    const data = await getFilteredDashboard(matchStage);
+
+    if (!data.length) {
+      return res.status(404).json({ 
+        error: "No assets found for this Prism ID and employee." 
+      });
+    }
+
+    res.status(200).json(data);
+  } catch (error) {
+    console.error("filterByPrismId error:", error);
+    res.status(500).json({ 
+      error: "Internal Server Error", 
+      details: error.message 
+    });
+  }
+}
+
+
+
+
 
 
 async function filterByDepartment(req, res) {
