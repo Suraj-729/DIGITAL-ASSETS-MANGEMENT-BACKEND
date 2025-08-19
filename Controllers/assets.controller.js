@@ -440,6 +440,7 @@ async function getProjectDetailsByName(req, res) {
     // Format Infra VA Records
     const infraVaRecords = (project.Infra?.vaRecords || []).map((record) => ({
       ipAddress: record.ipAddress || "",
+      dbServerIp: record.dbServerIp || "",
       purposeOfUse: record.purposeOfUse || "",
       vaScore: record.vaScore || "",
       dateOfVA: record.dateOfVA
