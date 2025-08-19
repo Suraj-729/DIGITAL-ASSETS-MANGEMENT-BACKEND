@@ -424,7 +424,7 @@ async function getProjectDetailsByName(req, res) {
     const drVaRecords = (project.DR?.vaRecords || []).map((record) => ({
       ipAddress: record.ipAddress || "",
       dbServerIp: record.dbServerIp || "",
-      purposeOfUse: record.purposeOfUse || record.purpose || "",
+      purpose: record.purpose || "",
       vaScore: record.vaScore || "",
       dateOfVA: record.dateOfVA || record.vaDate
         ? ((record.dateOfVA || record.vaDate) instanceof Date
@@ -441,6 +441,7 @@ async function getProjectDetailsByName(req, res) {
     const infraVaRecords = (project.Infra?.vaRecords || []).map((record) => ({
       ipAddress: record.ipAddress || "",
       purposeOfUse: record.purposeOfUse || "",
+      
       vaScore: record.vaScore || "",
       dateOfVA: record.dateOfVA
         ? (record.dateOfVA instanceof Date
@@ -494,6 +495,7 @@ async function getProjectDetailsByName(req, res) {
       Infra: {
         typeOfServer: project.Infra?.typeOfServer || "",
         location: project.Infra?.location || "",
+        antivirus: project.Infra?.antivirus || "",
         deployment: project.Infra?.deployment || "",
         dataCentre: project.Infra?.dataCentre || "",
         gitUrls: project.Infra?.gitUrls || [],
@@ -512,14 +514,15 @@ async function getProjectDetailsByName(req, res) {
         tlsInfo,
       },
       DR: {
-        drLocation: project.DR?.drLocation || project.DR?.location || "",
-        drStatus: project.DR?.drStatus || "",
-        lastDrTestDate: project.DR?.lastDrTestDate
-          ? (project.DR.lastDrTestDate instanceof Date
-              ? project.DR.lastDrTestDate.toISOString()
-              : project.DR.lastDrTestDate?.$date || project.DR.lastDrTestDate || "")
-          : "",
-        remarks: project.DR?.remarks || "",
+        location: project.DR?.location || project.DR?.location || "",
+        antivirus: project.DR?.antivirus || "",
+        // drStatus: project.DR?.drStatus || "",
+        // lastDrTestDate: project.DR?.lastDrTestDate
+        //   ? (project.DR.lastDrTestDate instanceof Date
+        //       ? project.DR.lastDrTestDate.toISOString()
+        //       : project.DR.lastDrTestDate?.$date || project.DR.lastDrTestDate || "")
+        //   : "",
+        // remarks: project.DR?.remarks || "",
         serverType: project.DR?.serverType || "",
         dataCentre: project.DR?.dataCentre || "",
         deployment: project.DR?.deployment || "",
