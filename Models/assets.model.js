@@ -31,13 +31,17 @@ const DigitalAssetsModel = {
   // Validate and transform VA records
   const validatedVaRecords = data.Infra.vaRecords.map((record, index) => {
     if (!record.ipAddress) {
-      throw new Error(`VA Record ${index + 1}: IP Address is required`);
-    }
-    if (!record.dateOfVA) {
-      throw new Error(`VA Record ${index + 1}: Date of VA is required`);
-    }
+    throw new Error(`VA Record ${index + 1}: IP Address is required`);
+  }
+  if (!record.dbServerIp) {
+    throw new Error(`VA Record ${index + 1}: Database Server IP Address is required`);
+  }
+  if (!record.dateOfVA) {
+    throw new Error(`VA Record ${index + 1}: Date of VA is required`);
+  }
     return {
       ipAddress: record.ipAddress,
+      dbServerIp: record.dbServerIp,  // ✅ consistent key
       purposeOfUse: record.purposeOfUse || "Application Server",
       vaScore: record.vaScore || null,
       dateOfVA: new Date(record.dateOfVA),
