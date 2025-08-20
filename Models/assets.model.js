@@ -24,24 +24,24 @@ const DigitalAssetsModel = {
       isUnique = true;
     }
   }
-  if (!data.BP || !data.SA || !data.TS || !data.Infra) {
+  if (!data.BP || !data.SA || !data.TS || !data.Infra || !data.DR || !data.TLS) {
     throw new Error("Missing required asset sections (BP, SA, TS, Infra)");
   }
 
   // Validate and transform VA records
   const validatedVaRecords = data.Infra.vaRecords.map((record, index) => {
     if (!record.ipAddress) {
-    throw new Error(`VA Record ${index + 1}: IP Address is required`);
-  }
-  if (!record.dbServerIp) {
-    throw new Error(`VA Record ${index + 1}: Database Server IP Address is required`);
-  }
-  if (!record.dateOfVA) {
-    throw new Error(`VA Record ${index + 1}: Date of VA is required`);
-  }
+      throw new Error(`VA Record ${index + 1}: IP Address is required`);
+    }
+    if(!record.dbServer) {
+      throw new Error(`VA Record ${index + 1}: DB Server IP is required`);
+    }
+    if (!record.dateOfVA) {
+      throw new Error(`VA Record ${index + 1}: Date of VA is required`);
+    }
     return {
       ipAddress: record.ipAddress,
-      dbServerIp: record.dbServerIp,  // ✅ consistent key
+      dbServer: record.dbServer || "", // Ensure dbServerIp is always a string
       purposeOfUse: record.purposeOfUse || "Application Server",
       vaScore: record.vaScore || null,
       dateOfVA: new Date(record.dateOfVA),
@@ -132,9 +132,10 @@ const DigitalAssetsModel = {
       location: data.Infra.location,
       deployment: data.Infra.deployment,
       dataCentre: data.Infra.dataCentre,
-      gitUrls: data.Infra.gitUrls || [],
+      antivirus:data.Infra.antivirus,
+      // gitUrls: data.Infra.gitUrls || [],
       vaRecords: validatedVaRecords,
-      additionalInfra: [],
+      // additionalInfra: [],
     },
     TS: {
       frontend: data.TS.frontend || [],
@@ -149,6 +150,7 @@ const DigitalAssetsModel = {
       dataCentre: data.DR.dataCentre || "",
       deployment: data.DR.deployment || "",
       location: data.DR.location || "",
+      antivirus: data.DR.antivirus || "",
       // gitUrls: data.DR.gitUrls || [],
       vaRecords: (data.DR.vaRecords || []).map((record) => ({
         ipAddress: record.ipAddress || "",
