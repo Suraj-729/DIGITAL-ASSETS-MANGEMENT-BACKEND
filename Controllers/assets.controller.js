@@ -440,7 +440,7 @@ async function getProjectDetailsByName(req, res) {
     // Format Infra VA Records
     const infraVaRecords = (project.Infra?.vaRecords || []).map((record) => ({
       ipAddress: record.ipAddress || "",
-      dbServerIp: record.dbServerIp || "",
+      dbServer: record.dbServer || "",
       purposeOfUse: record.purposeOfUse || "",
       
       vaScore: record.vaScore || "",
@@ -1069,6 +1069,7 @@ const getAuditExpiryForUser = async (req, res) => {
               assetId,
               message: `Security Audit expired for asset ${assetId} on ${auditExpireDate.toDateString()}`
             });
+            // if u want to show notification between 7 days then change this 
           } else if (daysLeft <= 7) {
             messages.push({
               type: "Security Audit",

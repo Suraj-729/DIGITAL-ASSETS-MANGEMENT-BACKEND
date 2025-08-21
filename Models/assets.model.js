@@ -74,34 +74,65 @@ const DigitalAssetsModel = {
         email: data.BP.nodalOfficerDept.email,
       },
     },
+    // SA: {
+    //   securityAudit: data.SA.securityAudit.map((record, index) => {
+    //     const auditDate = record.auditDate ? new Date(record.auditDate) : null;
+    //     const expireDate = record.expireDate ? new Date(record.expireDate) : null;
+    //     // const tlsNextExpiry = record.tlsNextExpiry ? new Date(record.tlsNextExpiry) : null;
+    //     let auditStatus = "Completed";
+    //     if (expireDate && new Date() > expireDate) {
+    //       auditStatus = "Expired";
+    //     }
+    //     let sslStatus = "Valid";
+    //     if (expireDate && new Date() > expireDate) {
+    //       sslStatus = "Expired";
+    //     }
+    //     return {
+    //       "Sl no": record["Sl no"],
+    //       typeOfAudit: record.typeOfAudit,
+    //       auditingAgency: record.auditingAgency,
+    //       auditDate,
+    //       expireDate,
+    //       // sslLabScore: record.sslLabScore,
+    //       certificate: typeof record.certificate === "string"
+    //         ? record.certificate
+    //         : record.certificate?.filename || null, // <-- always store as string
+    //       auditStatus,
+    //       sslStatus
+    //     };
+    //   }),
+    // },
+
     SA: {
       securityAudit: data.SA.securityAudit.map((record, index) => {
         const auditDate = record.auditDate ? new Date(record.auditDate) : null;
         const expireDate = record.expireDate ? new Date(record.expireDate) : null;
-        // const tlsNextExpiry = record.tlsNextExpiry ? new Date(record.tlsNextExpiry) : null;
+    
         let auditStatus = "Completed";
         if (expireDate && new Date() > expireDate) {
           auditStatus = "Expired";
         }
+    
         let sslStatus = "Valid";
         if (expireDate && new Date() > expireDate) {
           sslStatus = "Expired";
         }
+    
         return {
-          "Sl no": record["Sl no"],
-          typeOfAudit: record.typeOfAudit,
-          auditingAgency: record.auditingAgency,
-          auditDate,
-          expireDate,
-          // sslLabScore: record.sslLabScore,
+          "Sl no": record["Sl no"] || index + 1,  // default to index if missing
+          typeOfAudit: record.typeOfAudit || "N/A",
+          auditingAgency: record.auditingAgency || "N/A",
+          auditDate: auditDate || "N/A",
+          expireDate: expireDate || "N/A",
           certificate: typeof record.certificate === "string"
             ? record.certificate
-            : record.certificate?.filename || null, // <-- always store as string
-          auditStatus,
-          sslStatus
+            : record.certificate?.filename || "N/A", // always fallback
+          auditStatus: auditStatus || "N/A",
+          sslStatus: sslStatus || "N/A"
         };
       }),
-    },
+    }
+,    
     TLS: {
       tlsInfo: (data.TLS?.tlsInfo || []).map((record, index) => {
         const issueDate = record.issueDate ? new Date(record.issueDate) : null;
