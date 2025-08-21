@@ -681,11 +681,15 @@ async function updateAssetByProjectName(req, res) {
     const SA = JSON.parse(req.body.SA);
     const TS = JSON.parse(req.body.TS);
     const Infra = JSON.parse(req.body.Infra);
+    const TLS = JSON.parse(req.body.TLS);
+    const DR = JSON.parse(req.body.DR);
 
     console.log("📦 Parsed BP:", BP);
     console.log("📦 Parsed SA (before array check):", SA);
     console.log("📦 Parsed TS:", TS);
     console.log("📦 Parsed Infra:", Infra);
+    console.log("📦 Parsed TLS:", TLS);
+    console.log("📦 Parsed DR:", DR);
 
     // Ensure SA.securityAudit is an array
     if (SA && SA.securityAudit && !Array.isArray(SA.securityAudit)) {
@@ -706,7 +710,9 @@ async function updateAssetByProjectName(req, res) {
       BP,
       SA,
       TS,
-      Infra
+      Infra,
+      TLS: { tlsInfo: TLS.tlsInfo || [] },
+      DR: DR || {}
     });
 
     // Update document in DB
@@ -717,7 +723,11 @@ async function updateAssetByProjectName(req, res) {
           BP,
           SA,
           TS,
-          Infra
+          Infra,
+          TLS: {
+            tlsInfo: TLS.tlsInfo || []
+          },
+          DR: DR || {}
         }
       }
     );
