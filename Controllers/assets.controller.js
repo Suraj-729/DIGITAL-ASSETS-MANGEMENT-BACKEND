@@ -765,60 +765,6 @@ async function getOs(req, res) {
 async function getFilteredDashboard(matchStage) {
   const db = getDb();
 
-//   const pipeline = [
-//     { $match: matchStage },
-
-//     {
-//       $project: {
-//         _id: 0,
-//         assetsId: 1,
-//         projectName: "$BP.name",
-//         prismId: "$BP.prismId",
-//         deptName: "$BP.deptName",
-//         HOD: "$BP.HOD",
-//         tlsNextExpiry: { $first: "$TLS.tlsInfo.expiryDate" },
-//         employeeId: "$BP.employeeId",
-//         securityAudits: "$SA.securityAudit",
-//         dataCentre: "$Infra.dataCentre",
-//         createdAt: 1
-//       }
-//     },
-
-//     {
-//   $unwind: {
-//     path: "$securityAudits",
-//     preserveNullAndEmptyArrays: true
-//   }
-// },
-// {
-//   $unwind: {
-//     path: "$TLS.tlsInfo",
-//     preserveNullAndEmptyArrays: true
-//   }
-// },
-// {
-//   $project: {
-//     assetsId: 1,
-//     projectName: 1,
-//     prismId: 1,
-//     deptName: 1,
-//     HOD: 1,
-//     employeeId: 1,
-//     auditDate: "$securityAudits.auditDate",
-//     expireDate: "$securityAudits.expireDate",
-//     tlsNextExpiry: { $first: "$TLS.tlsInfo.expiryDate" },  // ✅ fixed
-//     sslLabScore: "$securityAudits.sslLabScore",
-//     certificate: "$securityAudits.certificate",
-//     auditStatus: "$securityAudits.auditStatus",
-//     sslStatus: "$securityAudits.sslStatus",
-//     dataCentre: 1,
-//     createdAt: 1
-//   }
-// }
-// ,
-//     { $sort: { expireDate: 1 } }
-//   ];
-
 
 const pipeline = [
   { $match: matchStage },
@@ -1189,39 +1135,6 @@ async function getDatabaseList(req, res) {
 
 
 
-
-
-
-
-
-
-// async function filterByDataCenter(req, res) {
-//   try {
-//     const { dataCenter, employeeId } = req.params;
-
-//     if (!dataCenter || !employeeId) {
-//       return res.status(400).json({ error: "Data center name and Employee ID are required." });
-//     }
-
-//     // Optional: Trim and case-insensitive match
-//     const matchStage = {
-//       "Infra.dataCentre": { $regex: new RegExp(`^${dataCenter}$`, "i") },
-//       "BP.employeeId": employeeId.trim()
-//     };
-
-//     const data = await getFilteredDashboard(matchStage);
-
-//     if (!data.length) {
-//       return res.status(404).json({ error: "No assets found for this data center and employee." });
-//     }
-
-//     res.status(200).json(data);
-//   } catch (error) {
-//     console.error("filterByDataCenter error:", error);
-//     res.status(500).json({ error: "Internal Server Error", details: error.message });
-//   }
-// }
-
 async function filterByDataCenter(req, res) {
   try {
     const { dataCenter, employeeId, employeeType } = req.params;
@@ -1265,31 +1178,7 @@ async function filterByDataCenter(req, res) {
 
 
 
-// async function filterByPrismId(req, res) {
-//   try {
-//     const { prismId, employeeId } = req.params;
 
-//     if (!prismId || !employeeId) {
-//       return res.status(400).json({ error: "Prism ID and Employee ID are required." });
-//     }
-
-//     const matchStage = {
-//       "BP.prismId": prismId.trim(),
-//       "BP.employeeId": employeeId.trim()
-//     };
-
-//     const data = await getFilteredDashboard(matchStage);
-
-//     if (!data.length) {
-//       return res.status(404).json({ error: "No assets found for this Prism ID and employee." });
-//     }
-
-//     res.status(200).json(data);
-//   } catch (error) {
-//     console.error("filterByPrismId error:", error);
-//     res.status(500).json({ error: "Internal Server Error", details: error.message });
-//   }
-// }
 
 
 async function filterByPrismId(req, res) {
