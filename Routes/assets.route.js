@@ -69,15 +69,25 @@ router.get('/dashboard/by-type/:employeeId', AssetsController.getDashboardByType
 router.put('/assets/update/by-project-name/:projectName', upload.single('certificate'), AssetsController.updateAssetByProjectName);
 
 
-router.get('/dashboard/filter/department/:deptName/employee/:employeeId', AssetsController.filterByDepartment);
+// router.get('/dashboard/filter/department/:deptName/employee/:employeeId', AssetsController.filterByDepartment);
+router.get('/dashboard/filter/department/:deptName/employee/:employeeId/employeeType/:employeeType', AssetsController.filterByDepartment);
 
 // router.get('/dashboard/filter/datacenter/:dataCenter', AssetsController.filterByDataCenter);
-router.get('/dashboard/filter/datacenter/:dataCenter/employee/:employeeId', AssetsController.filterByDataCenter);
+// router.get('/dashboard/filter/datacenter/:dataCenter/employee/:employeeId', AssetsController.filterByDataCenter);
+
+router.get(
+  '/dashboard/filter/datacenter/:dataCenter/employee/:employeeId/employeeType/:employeeType',
+  AssetsController.filterByDataCenter
+);
+
 
 // router.get('/dashboard/filter/prismid/:prismId', AssetsController.filterByPrismId);
-router.get('/dashboard/filter/prismid/:prismId/employee/:employeeId', AssetsController.filterByPrismId);
+// router.get('/dashboard/filter/prismid/:prismId/employee/:employeeId', AssetsController.filterByPrismId);
 
-
+router.get(
+  '/dashboard/filter/prismid/:prismId/employee/:employeeId/employeeType/:employeeType',
+  AssetsController.filterByPrismId
+);
 
 // ✅ Upload VA Report (Disk Storage)
 router.post("/upload-va-report", upload.single("vaReport"), async (req, res) => {
@@ -103,6 +113,7 @@ router.post("/upload-va-report", upload.single("vaReport"), (req, res) => {
   if (!req.file) return res.status(400).json({ error: "No file uploaded" });
   res.status(201).json({ filename: req.file.filename });
 });
+
 router.get("/va-reports/:filename", (req, res) => {
   const filename = req.params.filename;
   const filePath = path.join(__dirname, "..", "uploads", filename);
