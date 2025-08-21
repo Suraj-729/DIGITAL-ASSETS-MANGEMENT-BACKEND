@@ -54,116 +54,119 @@ const DigitalAssetsModel = {
   const assetProfile = {
     assetsId: assetsId,
     BP: {
-      name: data.BP.name,
-      prismId: data.BP.prismId,
-      deptName: data.BP.deptName,
-      employeeId: data.BP.employeeId,
-      url: data.BP.url,
-      publicIp: data.BP.publicIp,
-      HOD: data.BP.HOD,
+      name: data.BP.name || "",
+      prismId: data.BP.prismId || "",
+      deptName: data.BP.deptName || "",
+      employeeId: data.BP.employeeId || "",
+      url: data.BP.url || "",
+      publicIp: data.BP.publicIp || "",
+      HOD: data.BP.HOD || "",
       nodalOfficerNIC: {
-        name: data.BP.nodalOfficerNIC.name,
-        empCode: data.BP.nodalOfficerNIC.empCode,
-        mobile: data.BP.nodalOfficerNIC.mobile,
-        email: data.BP.nodalOfficerNIC.email,
+        name: data.BP.nodalOfficerNIC?.name || "",
+        empCode: data.BP.nodalOfficerNIC?.empCode || "",
+        mobile: data.BP.nodalOfficerNIC?.mobile || "",
+        email: data.BP.nodalOfficerNIC?.email || ""
       },
       nodalOfficerDept: {
-        name: data.BP.nodalOfficerDept.name,
-        designation: data.BP.nodalOfficerDept.designation,
-        mobile: data.BP.nodalOfficerDept.mobile,
-        email: data.BP.nodalOfficerDept.email,
-      },
+        name: data.BP.nodalOfficerDept?.name || "",
+        designation: data.BP.nodalOfficerDept?.designation || "",
+        mobile: data.BP.nodalOfficerDept?.mobile || "",
+        email: data.BP.nodalOfficerDept?.email || ""
+      }
     },
+  
     SA: {
-      securityAudit: data.SA.securityAudit.map((record, index) => {
-        const auditDate = record.auditDate ? new Date(record.auditDate) : null;
-        const expireDate = record.expireDate ? new Date(record.expireDate) : null;
-        // const tlsNextExpiry = record.tlsNextExpiry ? new Date(record.tlsNextExpiry) : null;
-        let auditStatus = "Completed";
-        if (expireDate && new Date() > expireDate) {
-          auditStatus = "Expired";
-        }
-        let sslStatus = "Valid";
-        if (expireDate && new Date() > expireDate) {
-          sslStatus = "Expired";
-        }
-        return {
-          "Sl no": record["Sl no"],
-          typeOfAudit: record.typeOfAudit,
-          auditingAgency: record.auditingAgency,
-          auditDate,
-          expireDate,
-          // sslLabScore: record.sslLabScore,
-          certificate: typeof record.certificate === "string"
-            ? record.certificate
-            : record.certificate?.filename || null, // <-- always store as string
-          auditStatus,
-          sslStatus
-        };
-      }),
+      securityAudit:
+        data.SA?.securityAudit?.length > 0
+          ? data.SA.securityAudit.map((record, index) => ({
+              "Sl no": record["Sl no"] || index + 1,
+              typeOfAudit: record.typeOfAudit || "N/A",
+              auditingAgency: record.auditingAgency || "N/A",
+              auditDate: record.auditDate || "",
+              expireDate: record.expireDate || "",
+              certificate:
+                typeof record.certificate === "string"
+                  ? record.certificate
+                  : record.certificate?.filename || "N/A",
+              auditStatus: record.auditStatus || "Completed",
+              sslStatus: record.sslStatus || "Valid"
+            }))
+          : [
+              {
+                "Sl no": 1,
+                typeOfAudit: "N/A",
+                auditingAgency: "N/A",
+                auditDate: "",
+                expireDate: "",
+                certificate: "N/A",
+                auditStatus: "Completed",
+                sslStatus: "Valid"
+              }
+            ]
     },
+  
     TLS: {
-      tlsInfo: (data.TLS?.tlsInfo || []).map((record, index) => {
-        const issueDate = record.issueDate ? new Date(record.issueDate) : null;
-        const expiryDate = record.expiryDate ? new Date(record.expiryDate) : null;
-        let certStatus = "Valid";
-        if (expiryDate && new Date() > expiryDate) {
-          certStatus = "Expired";
-        } else if (expiryDate) {
-          const warningPeriod = new Date();
-          warningPeriod.setDate(warningPeriod.getDate() + 30);
-          if (expiryDate < warningPeriod) {
-            certStatus = "Expiring Soon";
-          }
-        }
-        return {
-          // domainName: record.domainName || "",
-          // certProvider: record.certProvider || "",
-          issueDate,
-          expiryDate,
-          certStatus,
-          score: record.score || "",
-          procuredFrom: record.procuredFrom || "",
-        };
-      }),
+      tlsInfo:
+        data.TLS?.tlsInfo?.length > 0
+          ? data.TLS.tlsInfo.map((record, index) => ({
+              slNo: index + 1,
+              domainName: record.domainName || "",
+              certProvider: record.certProvider || "",
+              issueDate: record.issueDate || "",
+              expiryDate: record.expiryDate || "",
+              certStatus: record.certStatus || "N/A",
+              score: record.score || "N/A",
+              procuredFrom: record.procuredFrom || "N/A"
+            }))
+          : [
+              {
+                slNo: 1,
+                issueDate: "",
+                expiryDate: "",
+                certStatus: "N/A",
+                score: "N/A",
+                procuredFrom: "N/A"
+              }
+            ]
     },
+  
     Infra: {
-      typeOfServer: data.Infra.typeOfServer,
-      location: data.Infra.location,
-      deployment: data.Infra.deployment,
-      dataCentre: data.Infra.dataCentre,
-      antivirus:data.Infra.antivirus,
-      // gitUrls: data.Infra.gitUrls || [],
-      vaRecords: validatedVaRecords,
-      // additionalInfra: [],
+      typeOfServer: data.Infra?.typeOfServer || "",
+      location: data.Infra?.location || "",
+      deployment: data.Infra?.deployment || "",
+      dataCentre: data.Infra?.dataCentre || "",
+      antivirus: data.Infra?.antivirus || "",
+      vaRecords: validatedVaRecords || []
     },
+  
     TS: {
-      frontend: data.TS.frontend || [],
-      framework: data.TS.framework,
-      database: data.TS.database || [],
-      os: data.TS.os || [],
-      osVersion: data.TS.osVersion || [],
-      repoUrls: data.TS.repoUrls || [],
+      frontend: data.TS?.frontend || [],
+      framework: data.TS?.framework || [],
+      database: data.TS?.database || [],
+      os: data.TS?.os || [],
+      osVersion: data.TS?.osVersion || [],
+      repoUrls: data.TS?.repoUrls || []
     },
+  
     DR: {
-      serverType: data.DR.serverType || "",
-      dataCentre: data.DR.dataCentre || "",
-      deployment: data.DR.deployment || "",
-      location: data.DR.location || "",
-      antivirus: data.DR.antivirus || "",
-      // gitUrls: data.DR.gitUrls || [],
-      vaRecords: (data.DR.vaRecords || []).map((record) => ({
+      serverType: data.DR?.serverType || "",
+      dataCentre: data.DR?.dataCentre || "",
+      deployment: data.DR?.deployment || "",
+      location: data.DR?.location || "",
+      antivirus: data.DR?.antivirus || "",
+      vaRecords: (data.DR?.vaRecords || []).map((record) => ({
         ipAddress: record.ipAddress || "",
         dbServerIp: record.dbServerIp || "",
         purpose: record.purpose || "",
         vaScore: record.vaScore || "",
-        vaDate: record.vaDate ? new Date(record.vaDate) : null,
-        vaReport: record.vaReport || "",
-      })),
+        vaDate: record.vaDate || "",
+        vaReport: record.vaReport || ""
+      }))
     },
   
-    createdAt: new Date(),
+    createdAt: new Date()
   };
+  
 
   const result = await db.collection("Assets").insertOne(assetProfile);
   return result.insertedId;
