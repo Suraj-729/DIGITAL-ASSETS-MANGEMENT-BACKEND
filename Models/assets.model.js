@@ -83,7 +83,9 @@ const DigitalAssetsModel = {
               typeOfAudit: record.typeOfAudit || "N/A",
               auditingAgency: record.auditingAgency || "N/A",
               auditDate: record.auditDate || "",
-              expireDate: record.expireDate || "",
+              // expireDate: record.expireDate || "",
+              expireDate: record.expireDate ?? null,
+
               certificate:
                 typeof record.certificate === "string"
                   ? record.certificate
@@ -97,7 +99,7 @@ const DigitalAssetsModel = {
                 typeOfAudit: "N/A",
                 auditingAgency: "N/A",
                 auditDate: "",
-                expireDate: "",
+                expireDate: null,
                 certificate: "N/A",
                 auditStatus: "Completed",
                 sslStatus: "Valid"
