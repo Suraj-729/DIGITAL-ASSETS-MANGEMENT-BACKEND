@@ -609,9 +609,25 @@ async function getDashboardByType(req, res) {
           sslLabScore: "$SA.securityAudit.sslLabScore",
           certificate: "$SA.securityAudit.certificate",
           auditStatus: "$SA.securityAudit.auditStatus",
-          sslStatus: "$SA.securityAudit.sslStatus",
+          // sslStatus: "$SA.securityAudit.sslStatus",
+          
           dataCentre: "$Infra.dataCentre",
-          createdAt: 1
+          createdAt: 1,
+          tlsStatus: {
+            $cond: [
+              {
+                $gte: [
+                  { $toDate: { $arrayElemAt: ["$TLS.tlsInfo.expiryDate", -1] } },
+                  "$$NOW"
+                ]
+              },
+              "Valid",
+              "Invalid"
+            ]
+          }
+          
+        
+      
         }
       },
 
@@ -640,7 +656,7 @@ async function getDashboardByType(req, res) {
           sslLabScore: { $first: "$sslLabScore" },
           certificate: { $first: "$certificate" },
           auditStatus: { $first: "$auditStatus" },
-          sslStatus: { $first: "$sslStatus" },
+          tlsStatus: { $first: "$tlsStatus" }, 
           dataCentre: { $first: "$dataCentre" },
           createdAt: { $first: "$createdAt" }
         }
@@ -772,120 +788,175 @@ async function getOs(req, res) {
 
 
 
+// async function getFilteredDashboard(matchStage) {
+//   const db = getDb();
+
+
+
+
+// const pipeline = [
+//   { $match: matchStage },
+//   {
+//     $project: {
+//       _id: 0,
+//       assetsId: 1,
+//       projectName: "$BP.name",
+//       prismId: "$BP.prismId",
+//       deptName: "$BP.deptName",
+//       HOD: "$BP.HOD",
+//       employeeId: "$BP.employeeId",
+//       securityAudits: "$SA.securityAudit",
+//       dataCentre: "$Infra.dataCentre",
+//       // tlsStatus: { $first: "$TLS.tlsInfo.tlsStatus" },
+//       TLS: 1,
+//       createdAt: 1
+//     }
+//   },
+//   {
+//     $unwind: {
+//       path: "$securityAudits",
+//       preserveNullAndEmptyArrays: true
+//     }
+//   },
+//   {
+//     $unwind: {
+//       path: "$TLS.tlsInfo",
+//       preserveNullAndEmptyArrays: true
+//     }
+//   },
+//   {
+//     $addFields: {
+//       tlsStatus: {
+//         $cond: [
+//           { $gte: ["$TLS.tlsInfo.expiryDate", new Date()] }, // compare with today
+//           "Valid",
+//           "Invalid"
+//         ]
+//       }
+//     }
+//   }
+// ,  
+//   {
+//     $project: {
+//       assetsId: 1,
+//       projectName: 1,
+//       prismId: 1,
+//       deptName: 1,
+//       HOD: 1,
+//       employeeId: 1,
+//       auditDate: "$securityAudits.auditDate",
+//       expireDate: "$securityAudits.expireDate",
+//       tlsNextExpiry: "$TLS.tlsInfo.expiryDate", // ✅ fixed
+//       sslLabScore: "$securityAudits.sslLabScore",
+//       certificate: "$securityAudits.certificate",
+//       auditStatus: "$securityAudits.auditStatus",
+//       // sslStatus: "$securityAudits.sslStatus",
+//       tlsStatus:1,
+//       dataCentre: 1,
+//       createdAt: 1
+//     }
+//   },
+//   { $sort: { expireDate: 1 } }
+// ];
+
+//   return db.collection("Assets").aggregate(pipeline).toArray();
+// }
+
+
 async function getFilteredDashboard(matchStage) {
   const db = getDb();
 
-//   const pipeline = [
-//     { $match: matchStage },
-
-//     {
-//       $project: {
-//         _id: 0,
-//         assetsId: 1,
-//         projectName: "$BP.name",
-//         prismId: "$BP.prismId",
-//         deptName: "$BP.deptName",
-//         HOD: "$BP.HOD",
-//         tlsNextExpiry: { $first: "$TLS.tlsInfo.expiryDate" },
-//         employeeId: "$BP.employeeId",
-//         securityAudits: "$SA.securityAudit",
-//         dataCentre: "$Infra.dataCentre",
-//         createdAt: 1
-//       }
-//     },
-
-//     {
-//   $unwind: {
-//     path: "$securityAudits",
-//     preserveNullAndEmptyArrays: true
-//   }
-// },
-// {
-//   $unwind: {
-//     path: "$TLS.tlsInfo",
-//     preserveNullAndEmptyArrays: true
-//   }
-// },
-// {
-//   $project: {
-//     assetsId: 1,
-//     projectName: 1,
-//     prismId: 1,
-//     deptName: 1,
-//     HOD: 1,
-//     employeeId: 1,
-//     auditDate: "$securityAudits.auditDate",
-//     expireDate: "$securityAudits.expireDate",
-//     tlsNextExpiry: { $first: "$TLS.tlsInfo.expiryDate" },  // ✅ fixed
-//     sslLabScore: "$securityAudits.sslLabScore",
-//     certificate: "$securityAudits.certificate",
-//     auditStatus: "$securityAudits.auditStatus",
-//     sslStatus: "$securityAudits.sslStatus",
-//     dataCentre: 1,
-//     createdAt: 1
-//   }
-// }
-// ,
-//     { $sort: { expireDate: 1 } }
-//   ];
-
-
-const pipeline = [
-  { $match: matchStage },
-  {
-    $project: {
-      _id: 0,
-      assetsId: 1,
-      projectName: "$BP.name",
-      prismId: "$BP.prismId",
-      deptName: "$BP.deptName",
-      HOD: "$BP.HOD",
-      employeeId: "$BP.employeeId",
-      securityAudits: "$SA.securityAudit",
-      dataCentre: "$Infra.dataCentre",
-      TLS: 1,
-      createdAt: 1
+  const pipeline = [
+    { $match: matchStage },
+    {
+      $project: {
+        _id: 0,
+        assetsId: 1,
+        projectName: "$BP.name",
+        prismId: "$BP.prismId",
+        deptName: "$BP.deptName",
+        HOD: "$BP.HOD",
+        employeeId: "$BP.employeeId",
+        dataCentre: "$Infra.dataCentre",
+        TLS: "$TLS.tlsInfo",
+        latestSecurityAudit: {
+          $arrayElemAt: [
+            {
+              $slice: [
+                { $reverseArray: { $sortArray: { input: "$SA.securityAudit", sortBy: { auditDate: 1 } } } },
+                1
+              ]
+            },
+            0
+          ]
+        },
+        createdAt: 1
+      }
+    },
+    {
+      $addFields: {
+        // Pick the TLS object with the nearest expiry after latest audit
+        nearestTLS: {
+          $first: {
+            $sortArray: {
+              input: {
+                $filter: {
+                  input: "$TLS",
+                  as: "tls",
+                  cond: { $gte: ["$$tls.expiryDate", "$latestSecurityAudit.auditDate"] }
+                }
+              },
+              sortBy: { expiryDate: -1 }
+            }
+          }
+        }
+      }
+    },
+    {
+          $unwind: {
+            path: "$TLS.tlsInfo",
+            preserveNullAndEmptyArrays: true
+          }
+        },
+        
+          {
+            $addFields: {
+              tlsStatus: {
+                $cond: [
+                  { $gte: [ { $toDate: "$nearestTLS.expiryDate" }, new Date() ] },
+                  "Valid",
+                  "Invalid"
+                ]
+              }
+            }
+          }
+          
+        
+      , 
+    {
+      $project: {
+        assetsId: 1,
+        projectName: 1,
+        prismId: 1,
+        deptName: 1,
+        HOD: 1,
+        employeeId: 1,
+        dataCentre: 1,
+        createdAt: 1,
+        auditDate: "$latestSecurityAudit.auditDate",
+        expireDate: "$latestSecurityAudit.expireDate",
+        tlsNextExpiry: "$nearestTLS.expiryDate",
+        tlsStatus:1,
+        certificate: "$latestSecurityAudit.certificate",
+        auditStatus: "$latestSecurityAudit.auditStatus",
+      
+        
+      }
     }
-  },
-  {
-    $unwind: {
-      path: "$securityAudits",
-      preserveNullAndEmptyArrays: true
-    }
-  },
-  {
-    $unwind: {
-      path: "$TLS.tlsInfo",
-      preserveNullAndEmptyArrays: true
-    }
-  },
-  {
-    $project: {
-      assetsId: 1,
-      projectName: 1,
-      prismId: 1,
-      deptName: 1,
-      HOD: 1,
-      employeeId: 1,
-      auditDate: "$securityAudits.auditDate",
-      expireDate: "$securityAudits.expireDate",
-      tlsNextExpiry: "$TLS.tlsInfo.expiryDate", // ✅ fixed
-      sslLabScore: "$securityAudits.sslLabScore",
-      certificate: "$securityAudits.certificate",
-      auditStatus: "$securityAudits.auditStatus",
-      sslStatus: "$securityAudits.sslStatus",
-      dataCentre: 1,
-      createdAt: 1
-    }
-  },
-  { $sort: { expireDate: 1 } }
-];
+  ];
 
   return db.collection("Assets").aggregate(pipeline).toArray();
 }
-
-
-
 
 
 

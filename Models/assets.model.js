@@ -91,7 +91,7 @@ const DigitalAssetsModel = {
                   ? record.certificate
                   : record.certificate?.filename || "N/A",
               auditStatus: record.auditStatus || "Completed",
-              sslStatus: record.sslStatus || "Valid"
+              // sslStatus: record.sslStatus || "Valid"
             }))
           : [
               {
@@ -102,36 +102,69 @@ const DigitalAssetsModel = {
                 expireDate: null,
                 certificate: "N/A",
                 auditStatus: "Completed",
-                sslStatus: "Valid"
+                // sslStatus: "Valid"
               }
             ]
     },
   
+    // TLS: {
+    //   tlsInfo:
+    //     data.TLS?.tlsInfo?.length > 0
+    //       ? data.TLS.tlsInfo.map((record, index) => ({
+    //           slNo: index + 1,
+    //           issueDate: record.issueDate || "",
+    //           expiryDate: record.expiryDate || "",
+    //           certStatus: record.certStatus || "N/A",
+    //           score: record.score || "N/A",
+    //           procuredFrom: record.procuredFrom || "N/A"
+    //         }))
+    //       : [
+    //           {
+    //             slNo: 1,
+    //             issueDate: "",
+    //             expiryDate: "",
+    //             certStatus: "N/A",
+    //             score: "N/A",
+    //             procuredFrom: "N/A"
+    //           }
+    //         ]
+    // },
+  
     TLS: {
       tlsInfo:
         data.TLS?.tlsInfo?.length > 0
-          ? data.TLS.tlsInfo.map((record, index) => ({
-              slNo: index + 1,
-              domainName: record.domainName || "",
-              certProvider: record.certProvider || "",
-              issueDate: record.issueDate || "",
-              expiryDate: record.expiryDate || "",
-              certStatus: record.certStatus || "N/A",
-              score: record.score || "N/A",
-              procuredFrom: record.procuredFrom || "N/A"
-            }))
+          ? data.TLS.tlsInfo.map((record, index) => {
+              const today = new Date();
+              const expiry = record.expiryDate ? new Date(record.expiryDate) : null;
+    
+              let tlsStatus = "N/A";
+              if (expiry) {
+                tlsStatus = expiry >= today ? "Valid" : "Invalid";
+              }
+    
+              return {
+                slNo: index + 1,
+                issueDate: record.issueDate || "",
+                expiryDate: record.expiryDate || "",
+                tlsStatus, // 👈 use tlsStatus instead of certStatus
+                score: record.score || "N/A",
+                procuredFrom: record.procuredFrom || "N/A",
+              };
+            })
           : [
               {
                 slNo: 1,
                 issueDate: "",
                 expiryDate: "",
-                certStatus: "N/A",
+                tlsStatus: "N/A", // 👈 match frontend
                 score: "N/A",
-                procuredFrom: "N/A"
+                procuredFrom: "N/A",
               }
             ]
     },
-  
+    
+    
+    
     Infra: {
       typeOfServer: data.Infra?.typeOfServer || "",
       location: data.Infra?.location || "",
