@@ -83,8 +83,8 @@ const DigitalAssetsModel = {
               typeOfAudit: record.typeOfAudit || "N/A",
               auditingAgency: record.auditingAgency || "N/A",
               auditDate: record.auditDate || "",
-              // expireDate: record.expireDate || "",
-              expireDate: record.expireDate ?? null,
+              expireDate: record.expireDate || "",
+              // expireDate: record.expireDate ?? null,
 
               certificate:
                 typeof record.certificate === "string"

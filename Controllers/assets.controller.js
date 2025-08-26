@@ -616,15 +616,27 @@ async function getDashboardByType(req, res) {
           tlsStatus: {
             $cond: [
               {
-                $gte: [
-                  { $toDate: { $arrayElemAt: ["$TLS.tlsInfo.expiryDate", -1] } },
-                  "$$NOW"
+                $and: [
+                  { $ne: [{ $arrayElemAt: ["$TLS.tlsInfo.expiryDate", -1] }, ""] },
+                  // { $ne: [{ $arrayElemAt: ["$TLS.tlsInfo.expiryDate", -1] }, null] }
                 ]
               },
-              "Valid",
+              {
+                $cond: [
+                  {
+                    $gte: [
+                      { $toDate: { $arrayElemAt: ["$TLS.tlsInfo.expiryDate", -1] } },
+                      "$$NOW"
+                    ]
+                  },
+                  "Valid",
+                  "Invalid"
+                ]
+              },
               "Invalid"
             ]
           }
+          
           
         
       
