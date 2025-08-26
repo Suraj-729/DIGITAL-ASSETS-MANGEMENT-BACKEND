@@ -3,31 +3,7 @@ const { getDb } = require("../Db/Db");
 const { ObjectId } = require("mongodb");
 
 const DigitalAssetsModel = {
-  // async generateNextNICId() {
-  //   try {
-  //     // Find the highest existing NIC ID with projection and sort
-  //     const lastAsset = await AssetProfile.findOne(
-  //       { assetsId: /^NIC-\d{4}$/ }, // Strict pattern matching
-  //       { assetsId: 1, _id: 0 },
-  //       { sort: { assetsId: -1 } }
-  //     )
-  //       .lean()
-  //       .exec();
 
-  //     let nextNumber = 1;
-  //     if (lastAsset?.assetsId) {
-  //       const lastNumber = parseInt(lastAsset.assetsId.split("-")[1], 10);
-  //       if (!isNaN(lastNumber)) {
-  //         nextNumber = lastNumber + 1;
-  //       }
-  //     }
-
-  //     return `NIC-${nextNumber.toString().padStart(4, "0")}`;
-  //   } catch (error) {
-  //     console.error("Error generating NIC ID:", error);
-  //     throw new Error("Failed to generate asset ID");
-  //   }
-  // },
   async createAsset(data) {
     const db = getDb();
     let assetsId;
