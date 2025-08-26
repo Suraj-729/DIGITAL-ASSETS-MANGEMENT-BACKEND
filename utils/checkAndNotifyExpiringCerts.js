@@ -13,6 +13,12 @@ const transporter = nodemailer.createTransport({
   }
 });
 
+/**
+ * Sends an email using nodemailer.
+ * @param {string} email - Recipient email address
+ * @param {string} text - Email body text
+ * @returns {Promise<void>}
+ */
 async function send(email, text) {
   await transporter.sendMail({
     from: `"Asset‑Mgmt" <${process.env.MAIL_USER}>`,
@@ -22,6 +28,10 @@ async function send(email, text) {
   });
 }
 
+/**
+ * Checks all assets for expiring SSL/TLS certificates and notifies users by email if any are expiring within 30 days.
+ * @returns {Promise<void>}
+ */
 async function notifyUsersAboutExpiringCerts() {
   const db = getDb();
   const today = new Date();

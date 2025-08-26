@@ -1,6 +1,11 @@
 const UserModel = require("../Models/user.model");
 
-// Create a new user
+/**
+ * Creates a new user.
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @returns {Promise<void>}
+ */
 async function createUser(req, res) {
   try {
     const userId = await UserModel.createUser(req.body);
@@ -11,7 +16,12 @@ async function createUser(req, res) {
   }
 }
 
-// Get user by assetsId
+/**
+ * Retrieves a user by their assetsId.
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @returns {Promise<void>}
+ */
 async function getUserById(req, res) {
   try {
     const user = await UserModel.getUserById(req.params.assetsId);
@@ -25,7 +35,12 @@ async function getUserById(req, res) {
   }
 }
 
-// Update user password
+/**
+ * Updates a user's password.
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @returns {Promise<void>}
+ */
 async function updatePassword(req, res) {
   try {
     const { assetsId } = req.params;
@@ -41,7 +56,12 @@ async function updatePassword(req, res) {
   }
 }
 
-// Delete user by assetsId
+/**
+ * Deletes a user by their assetsId.
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @returns {Promise<void>}
+ */
 async function deleteUser(req, res) {
   try {
     const result = await UserModel.deleteUser(req.params.assetsId);
@@ -55,6 +75,12 @@ async function deleteUser(req, res) {
   }
 }
 
+/**
+ * Authenticates a user and starts a session.
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @returns {Promise<void>}
+ */
 async function login(req, res) {
   try {
     const { loginId, password } = req.body; // Accept loginId (can be userId or employeeId)
@@ -81,8 +107,10 @@ async function login(req, res) {
         userId: user.userId,
         employeeId: user.employeeId,
         employeeType: user.employeeType,
-        HOD: typeof user.HOD === "string" ? user.HOD : "" // Always send HOD name or empty string
-      }
+        HOD: typeof user.HOD === "string" ? user.HOD : "",
+        PM: typeof user.PM === "string" ? user.PM : "",
+        Admin: typeof user.Admin === "string" ? user.Admin : ""
+      }      
     });
   } catch (err) {
     console.error('Login error:', {
@@ -97,7 +125,12 @@ async function login(req, res) {
   }
 }
 
-// Logout user
+/**
+ * Logs out a user and clears their session.
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @returns {Promise<void>}
+ */
 async function logout(req, res) {
   try {
     if (req.session) {
@@ -112,6 +145,12 @@ async function logout(req, res) {
 
 
 
+/**
+ * Registers a new user.
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @returns {Promise<void>}
+ */
 async function register(req, res) {
   try {
    const { userId, password, employeeId, employeeType, employeeName } = req.body;
@@ -154,6 +193,12 @@ async function register(req, res) {
   }
 }
 
+/**
+ * Changes a user's password after verifying their current password.
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @returns {Promise<void>}
+ */
 async function changePassword(req, res) {
   try {
     const { loginId, currentPassword, newPassword } = req.body;

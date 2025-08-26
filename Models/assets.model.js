@@ -1,150 +1,179 @@
 
+
+
 const { getDb } = require("../Db/Db");
 const { ObjectId } = require("mongodb");
 
 const DigitalAssetsModel = {
+  
+ 
+
+
 
   async createAsset(data) {
-    const db = getDb();
-    let assetsId;
-    let isUnique = false;
-  
-    while (!isUnique) {
-      const randomNum = Math.floor(1000 + Math.random() * 9000); // 4-digit random number
-      const tempId = ` NICOD-${randomNum}`;
-  
-      const existing = await db.collection("Assets").findOne({ assetsId: tempId });
-      if (!existing) {
-        assetsId = tempId;
-        isUnique = true;
-      }
+  const db = getDb();
+  let assetsId;
+  let isUnique = false;
+
+  while (!isUnique) {
+    const randomNum = Math.floor(1000 + Math.random() * 9000); // 4-digit random number
+    const tempId = `NICOD-${randomNum}`;
+    const existing = await db.collection("Assets").findOne({ assetsId: tempId });
+    if (!existing) {
+      assetsId = tempId;
+      isUnique = true;
     }
-    if (!data.BP || !data.SA || !data.TS || !data.Infra) {
-      throw new Error("Missing required asset sections (BP, SA, TS, Infra)");
+  }
+  if (!data.BP || !data.SA || !data.TS || !data.Infra || !data.DR || !data.TLS) {
+    throw new Error("Missing required asset sections (BP, SA, TS, Infra)");
+  }
+
+  // Validate and transform VA records
+  const validatedVaRecords = data.Infra.vaRecords.map((record, index) => {
+    if (!record.ipAddress) {
+      throw new Error(`VA Record ${index + 1}: IP Address is required`);
     }
-    // const assetsId = await this.generateNextNICId();
-
-    // Validate and transform VA records
-    const validatedVaRecords = data.Infra.vaRecords.map((record, index) => {
-      // Validate required fields
-      if (!record.ipAddress) {
-        throw new Error(`VA Record ${index + 1}: IP Address is required`);
-      }
-      if (!record.dateOfVA) {
-        throw new Error(`VA Record ${index + 1}: Date of VA is required`);
-      }
-
-      // Transform the record
-      return {
-        ipAddress: record.ipAddress,
-        purposeOfUse: record.purposeOfUse || "Application Server",
-        vaScore: record.vaScore || null,
-        dateOfVA: new Date(record.dateOfVA),
-        vaReport: record.vaReport || null,
-      };
-    });
-
-    const assetProfile = {
-      assetsId: assetsId,
-      BP: {
-        name: data.BP.name,
-        prismId: data.BP.prismId,
-        deptName: data.BP.deptName, // <-- fix typo
-        employeeId: data.BP.employeeId, // <-- add this line
-        url: data.BP.url,
-        publicIp: data.BP.publicIp, // <-- fix typo
-        HOD: data.BP.HOD,
-        nodalOfficerNIC: {
-          name: data.BP.nodalOfficerNIC.name, // <-- fix typo
-          empCode: data.BP.nodalOfficerNIC.empCode, // <-- fix typo
-          mobile: data.BP.nodalOfficerNIC.mobile, // <-- fix typo
-          email: data.BP.nodalOfficerNIC.email, // <-- fix typo
-        },
-        nodalOfficerDept: {
-          name: data.BP.nodalOfficerDept.name, // <-- fix typo
-          designation: data.BP.nodalOfficerDept.designation, // <-- fix typo
-          mobile: data.BP.nodalOfficerDept.mobile, // <-- fix typo
-          email: data.BP.nodalOfficerDept.email, // <-- fix typo
-        },
-      },
-      // SA: {
-
-      //   securityAudit: data.SA.securityAudit.map((record) => ({
-      //     "Sl no": record["Sl no"],
-      //     typeOfAudit: record.typeOfAudit,
-      //     auditingAgency: record.auditingAgency,
-      //     auditDate: record.auditDate ? new Date(record.auditDate) : null,
-      //     expireDate: record.expireDate ? new Date(record.expireDate) : null,
-      //     tlsNextExpiry: record.tlsNextExpiry
-      //       ? new Date(record.tlsNextExpiry)
-      //       : null,
-      //     sslLabScore: record.sslLabScore,
-      //     certificate: record.certificate,
-      //     // Add these lines:
-      //     auditStatus: record.auditStatus || "Completed", // or your logic
-      //     sslStatus: record.sslStatus || "Valid", // or your logic
-      //   })),
-      // },
-
-      SA: {
-  securityAudit: data.SA.securityAudit.map((record, index) => {
-    // Handle possible undefined/null values
-    const auditDate = record.auditDate ? new Date(record.auditDate) : null;
-    const expireDate = record.expireDate ? new Date(record.expireDate) : null;
-    const tlsNextExpiry = record.tlsNextExpiry ? new Date(record.tlsNextExpiry) : null;
-
-    // Determine audit status
-    let auditStatus = "Completed";
-    if (expireDate && new Date() > expireDate) {
-      auditStatus = "Expired";
+    if(!record.dbServer) {
+      throw new Error(`VA Record ${index + 1}: DB Server IP is required`);
     }
-
-    // Determine SSL status
-    let sslStatus = "Valid";
-    if (tlsNextExpiry && new Date() > tlsNextExpiry) {
-      sslStatus = "Expired";
+    if (!record.dateOfVA) {
+      throw new Error(`VA Record ${index + 1}: Date of VA is required`);
     }
-
     return {
-      "Sl no": record["Sl no"],
-      typeOfAudit: record.typeOfAudit,
-      auditingAgency: record.auditingAgency,
-      auditDate,
-      expireDate,
-      tlsNextExpiry,
-      sslLabScore: record.sslLabScore,
-      certificate: record.certificate,
-      auditStatus,
-      sslStatus
+      ipAddress: record.ipAddress,
+      dbServer: record.dbServer || "", // Ensure dbServerIp is always a string
+      purposeOfUse: record.purposeOfUse || "Application Server",
+      vaScore: record.vaScore || null,
+      dateOfVA: new Date(record.dateOfVA),
+      vaReport: typeof record.vaReport === "string"
+        ? record.vaReport
+        : record.vaReport?.filename || null, // <-- always store as string
     };
-  }),
-}
-,
-      Infra: {
-        typeOfServer: data.Infra.typeOfServer,
-        location: data.Infra.location,
-        deployment: data.Infra.deployment,
-        dataCentre: data.Infra.dataCentre,
-        gitUrls: data.Infra.gitUrls || [],
-        vaRecords: validatedVaRecords, // Use the validated and transformed records
-        additionalInfra: [],
-      },
-      TS: {
-        frontend: data.TS.frontend || [], // Changed from frontEnd to frontend
-        framework: data.TS.framework,
-        database: data.TS.database || [],
-        os: data.TS.os || [],
-        osVersion: data.TS.osVersion || [], // Add this if you want to keep OS versions
-        repoUrls: data.TS.repoUrls || [], // Add this if you want to keep repo URLs
-      },
-      createdAt: new Date(),
-    };
+  });
 
-    const result = await db.collection("Assets").insertOne(assetProfile);
-    return result.insertedId;
-  },
+  const assetProfile = {
+    assetsId: assetsId,
+    BP: {
+      name: data.BP.name || "",
+      prismId: data.BP.prismId || "",
+      deptName: data.BP.deptName || "",
+      employeeId: data.BP.employeeId || "",
+      url: data.BP.url || "",
+      publicIp: data.BP.publicIp || "",
+      HOD: data.BP.HOD || "",
+      nodalOfficerNIC: {
+        name: data.BP.nodalOfficerNIC?.name || "",
+        empCode: data.BP.nodalOfficerNIC?.empCode || "",
+        mobile: data.BP.nodalOfficerNIC?.mobile || "",
+        email: data.BP.nodalOfficerNIC?.email || ""
+      },
+      nodalOfficerDept: {
+        name: data.BP.nodalOfficerDept?.name || "",
+        designation: data.BP.nodalOfficerDept?.designation || "",
+        mobile: data.BP.nodalOfficerDept?.mobile || "",
+        email: data.BP.nodalOfficerDept?.email || ""
+      }
+    },
+  
+    SA: {
+      securityAudit:
+        data.SA?.securityAudit?.length > 0
+          ? data.SA.securityAudit.map((record, index) => ({
+              "Sl no": record["Sl no"] || index + 1,
+              typeOfAudit: record.typeOfAudit || "N/A",
+              auditingAgency: record.auditingAgency || "N/A",
+              auditDate: record.auditDate || "",
+              // expireDate: record.expireDate || "",
+              expireDate: record.expireDate ?? null,
 
-  // ✅ Get full asset by custom asset ID
+              certificate:
+                typeof record.certificate === "string"
+                  ? record.certificate
+                  : record.certificate?.filename || "N/A",
+              auditStatus: record.auditStatus || "Completed",
+              sslStatus: record.sslStatus || "Valid"
+            }))
+          : [
+              {
+                "Sl no": 1,
+                typeOfAudit: "N/A",
+                auditingAgency: "N/A",
+                auditDate: "",
+                expireDate: null,
+                certificate: "N/A",
+                auditStatus: "Completed",
+                sslStatus: "Valid"
+              }
+            ]
+    },
+  
+    TLS: {
+      tlsInfo:
+        data.TLS?.tlsInfo?.length > 0
+          ? data.TLS.tlsInfo.map((record, index) => ({
+              slNo: index + 1,
+              domainName: record.domainName || "",
+              certProvider: record.certProvider || "",
+              issueDate: record.issueDate || "",
+              expiryDate: record.expiryDate || "",
+              certStatus: record.certStatus || "N/A",
+              score: record.score || "N/A",
+              procuredFrom: record.procuredFrom || "N/A"
+            }))
+          : [
+              {
+                slNo: 1,
+                issueDate: "",
+                expiryDate: "",
+                certStatus: "N/A",
+                score: "N/A",
+                procuredFrom: "N/A"
+              }
+            ]
+    },
+  
+    Infra: {
+      typeOfServer: data.Infra?.typeOfServer || "",
+      location: data.Infra?.location || "",
+      deployment: data.Infra?.deployment || "",
+      dataCentre: data.Infra?.dataCentre || "",
+      antivirus: data.Infra?.antivirus || "",
+      vaRecords: validatedVaRecords || []
+    },
+  
+    TS: {
+      frontend: data.TS?.frontend || [],
+      framework: data.TS?.framework || [],
+      database: data.TS?.database || [],
+      os: data.TS?.os || [],
+      osVersion: data.TS?.osVersion || [],
+      repoUrls: data.TS?.repoUrls || []
+    },
+  
+    DR: {
+      serverType: data.DR?.serverType || "",
+      dataCentre: data.DR?.dataCentre || "",
+      deployment: data.DR?.deployment || "",
+      location: data.DR?.location || "",
+      antivirus: data.DR?.antivirus || "",
+      vaRecords: (data.DR?.vaRecords || []).map((record) => ({
+        ipAddress: record.ipAddress || "",
+        dbServerIp: record.dbServerIp || "",
+        purpose: record.purpose || "",
+        vaScore: record.vaScore || "",
+        vaDate: record.vaDate || "",
+        vaReport: record.vaReport || ""
+      }))
+    },
+  
+    createdAt: new Date()
+  };
+  
+
+  const result = await db.collection("Assets").insertOne(assetProfile);
+  return result.insertedId;
+},
+
   async getAssetByAssetsId(assetsId) {
     const db = getDb();
     const asset = await db.collection("Assets").findOne({ assetsId });
@@ -176,6 +205,12 @@ const DigitalAssetsModel = {
       .collection("Assets")
       .updateOne({ assetsId }, { $set: { SA: newSA } });
   },
+  async updateTLS(assetsId, newTLS) {
+    const db = getDb();
+    return await db
+      .collection("Assets")
+      .updateOne({ assetsId }, { $set: { TLS: newTLS } });
+  },
 
   // ✅ Update Infra section
   async updateInfra(assetsId, newInfra) {
@@ -188,11 +223,36 @@ const DigitalAssetsModel = {
   },
 
   // ✅ Update TS section
-  async updateTS(assetsId, newTS) {
+  async updateTS(assetsId, newTLS) {
     const db = getDb();
     return await db
       .collection("Assets")
-      .updateOne({ assetsId }, { $set: { TS: newTS } });
+      .updateOne({ assetsId }, { $set: { TLS: newTLS } });
+  },
+  async updateDRInfo(assetsId, newDRInfo) {
+    const db = getDb();
+    return await db
+      .collection("Assets")
+      .updateOne({ assetsId }, { $set: { DRInfo: newDRInfo } });
+  },
+  async assignByHOD(data) {
+    const db = getDb();
+  
+    const assignedAsset = {
+      projectName: data.projectName || "",
+      employeeId: data.employeeId || "",
+      deptName: data.deptName || "",
+      HOD: data.hodName || "",
+      projectManagerName: data.projectManagerName || "",
+      empCode: data.empCode || "",
+      createdAt: new Date(),
+      updatedByPM: false
+    };
+  
+    console.log(assignedAsset);
+  
+    const result = await db.collection("AssignedAssets").insertOne(assignedAsset);
+    return result.insertedId;
   },
 
   async getDashboardAllProjectBySIO() {
@@ -223,29 +283,26 @@ const DigitalAssetsModel = {
       .toArray();
   },
 
-
- async assignByHOD(data) {
-  const db = getDb();
-
-  const assignedAsset = {
-    projectName: data.projectName || "",
-    employeeId: data.employeeId || "",
-    deptName: data.deptName || "",
-    HOD: data.hodName || "",
-    projectManagerName: data.projectManagerName || "",
-    empCode: data.empCode || "",
-    createdAt: new Date(),
-    updatedByPM: false
-  };
-
-  console.log(assignedAsset);
-
-  const result = await db.collection("AssignedAssets").insertOne(assignedAsset);
-  return result.insertedId;
-}
-
-
-
+  async assignByHOD(data) {
+    const db = getDb();
+  
+    const assignedAsset = {
+      projectName: data.projectName || "",
+      employeeId: data.employeeId || "",
+      deptName: data.deptName || "",
+      HOD: data.hodName || "",
+      projectManagerName: data.projectManagerName || "",
+      empCode: data.empCode || "",
+      createdAt: new Date(),
+      updatedByPM: false
+    };
+  
+    console.log(assignedAsset);
+  
+    const result = await db.collection("AssignedAssets").insertOne(assignedAsset);
+    return result.insertedId;
+  }
 };
+
 
 module.exports = DigitalAssetsModel;
