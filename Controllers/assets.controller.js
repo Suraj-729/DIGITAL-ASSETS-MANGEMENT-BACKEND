@@ -3,16 +3,42 @@ const { getDb } = require("../Db/Db");
 const moment = require("moment");
 const { ObjectId } = require("mongodb");
 
+// async function createAsset(req, res) {
+//   try {
+//     // Parse the JSON strings from multipart/form-data
+//     const BP = JSON.parse(req.body.BP);
+//     const SA = JSON.parse(req.body.SA);
+//     const TS = JSON.parse(req.body.TS);
+//     const Infra = JSON.parse(req.body.Infra);
+//     const TLS = JSON.parse(req.body.TLS);
+//     const DR = JSON.parse(req.body.DR);
+
+//     const assetId = await AssetsModel.createAsset({
+//       BP,
+//       SA,
+//       TS,
+//       Infra,
+//       TLS,
+//       DR,
+//       certificate: req.file || null,
+//     });
+
+//     res.status(201).json({ assetId });
+//   } catch (err) {
+//     console.error("Error in createAsset:", err);
+//     res.status(500).json({ error: "Failed to create asset" });
+//   }
+// }
 async function createAsset(req, res) {
   try {
-    // Parse the JSON strings from multipart/form-data
     const BP = JSON.parse(req.body.BP);
     const SA = JSON.parse(req.body.SA);
     const TS = JSON.parse(req.body.TS);
     const Infra = JSON.parse(req.body.Infra);
-    const TLS=JSON.parse(req.body.TLS);
-    const  DR=JSON.parse(req.body.DR);
+    const TLS = JSON.parse(req.body.TLS);
+    const DR = JSON.parse(req.body.DR);
 
+    // Step 1: Create asset and get the actual assetsId
     const assetId = await AssetsModel.createAsset({
       BP,
       SA,
@@ -23,12 +49,36 @@ async function createAsset(req, res) {
       certificate: req.file || null,
     });
 
+    console.log("✅ Asset created with assetsId:", assetId);
+
+    // Step 2: Update AssignedAssets for this PM/project
+    const db = getDb();
+    const updateResult = await db.collection("AssignedAssets").updateOne(
+      { 
+        projectName: BP.name,
+        empCode: BP.nodalOfficerNIC?.empCode || ""
+      },
+      { 
+        $set: { 
+          updatedByPM: true,
+          updatedAt: new Date(),
+          linkedAssetId: assetId // <-- store actual assetsId here
+        }
+      }
+    );
+
+    console.log("📝 AssignedAssets update result:", updateResult);
+
+    // Step 3: Respond with the created assetId
     res.status(201).json({ assetId });
   } catch (err) {
-    console.error("Error in createAsset:", err);
+    console.error("❌ Error in createAsset:", err);
     res.status(500).json({ error: "Failed to create asset" });
   }
 }
+
+
+
 
 async function getAsset(req, res) {
   try {
@@ -39,24 +89,24 @@ async function getAsset(req, res) {
     if (!asset) return res.status(404).json({ error: "Asset not found" });
 
     res.status(200).json({
-    //   BP: asset.BP,
-    //   SA: asset.SA,
-    //   Infra: asset.Infra,
-    //   TS: asset.TS,
-    //   TLS: {
-    //     tlsInfo: asset.TLS ? Object.values(asset.TLS) : []
-    //   }, 
-    //    DR: asset.DR
-    // });
-    BP: asset.BP || {},
-    SA: asset.SA || {},
-    Infra: asset.Infra || {},
-    TS: asset.TS || {},
-    TLS: {
-      tlsInfo: asset.TLS ? Object.values(asset.TLS) : []
-    },
-    DR: asset.DR || {}
-  });
+      //   BP: asset.BP,
+      //   SA: asset.SA,
+      //   Infra: asset.Infra,
+      //   TS: asset.TS,
+      //   TLS: {
+      //     tlsInfo: asset.TLS ? Object.values(asset.TLS) : []
+      //   },
+      //    DR: asset.DR
+      // });
+      BP: asset.BP || {},
+      SA: asset.SA || {},
+      Infra: asset.Infra || {},
+      TS: asset.TS || {},
+      TLS: {
+        tlsInfo: asset.TLS ? Object.values(asset.TLS) : [],
+      },
+      DR: asset.DR || {},
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Failed to get asset" });
@@ -78,7 +128,6 @@ async function deleteAsset(req, res) {
     res.status(500).json({ error: "Failed to delete asset" });
   }
 }
-
 
 // Update BP section
 async function updateBP(req, res) {
@@ -120,7 +169,6 @@ async function updateBP(req, res) {
   }
 }
 
-
 async function updateSA(req, res) {
   const db = getDb();
   const { assetsId } = req.params;
@@ -149,7 +197,6 @@ async function updateSA(req, res) {
     res.status(500).json({ error: "Update SA failed", details: err.message });
   }
 }
-
 
 async function updateInfra(req, res) {
   const db = getDb();
@@ -185,7 +232,6 @@ async function updateInfra(req, res) {
   }
 }
 
-
 async function updateTS(req, res) {
   const db = getDb();
   const { assetsId } = req.params;
@@ -211,7 +257,6 @@ async function updateTS(req, res) {
     res.status(500).json({ error: "Update TS failed", details: err.message });
   }
 }
-
 
 async function getAssetsByDataCentre(req, res) {
   try {
@@ -250,7 +295,6 @@ async function getAssetsByDataCentre(req, res) {
     });
   }
 }
-
 
 async function getAssetsByDepartment(req, res) {
   try {
@@ -296,7 +340,6 @@ async function getAssetsByDepartment(req, res) {
     });
   }
 }
-
 
 async function getDashboardAllProjectBySIO(req, res) {
   try {
@@ -364,11 +407,6 @@ async function getDashboardAllProjectBySIO(req, res) {
   }
 }
 
-
-
-
-
-
 async function getProjectDetailsByName(req, res) {
   try {
     const db = getDb();
@@ -406,14 +444,14 @@ async function getProjectDetailsByName(req, res) {
       domainName: record.domainName || "",
       certProvider: record.certProvider || "",
       issueDate: record.issueDate
-        ? (record.issueDate instanceof Date
-            ? record.issueDate.toISOString()
-            : record.issueDate?.$date || record.issueDate || "")
+        ? record.issueDate instanceof Date
+          ? record.issueDate.toISOString()
+          : record.issueDate?.$date || record.issueDate || ""
         : "",
       expiryDate: record.expiryDate
-        ? (record.expiryDate instanceof Date
-            ? record.expiryDate.toISOString()
-            : record.expiryDate?.$date || record.expiryDate || "")
+        ? record.expiryDate instanceof Date
+          ? record.expiryDate.toISOString()
+          : record.expiryDate?.$date || record.expiryDate || ""
         : "",
       certStatus: record.certStatus || "",
       score: record.score || "",
@@ -426,11 +464,15 @@ async function getProjectDetailsByName(req, res) {
       dbServerIp: record.dbServerIp || "",
       purpose: record.purpose || "",
       vaScore: record.vaScore || "",
-      dateOfVA: record.dateOfVA || record.vaDate
-        ? ((record.dateOfVA || record.vaDate) instanceof Date
+      dateOfVA:
+        record.dateOfVA || record.vaDate
+          ? (record.dateOfVA || record.vaDate) instanceof Date
             ? (record.dateOfVA || record.vaDate).toISOString()
-            : (record.dateOfVA || record.vaDate)?.$date || record.dateOfVA || record.vaDate || "")
-        : "",
+            : (record.dateOfVA || record.vaDate)?.$date ||
+              record.dateOfVA ||
+              record.vaDate ||
+              ""
+          : "",
       vaReport:
         typeof record.vaReport === "string"
           ? record.vaReport
@@ -442,12 +484,12 @@ async function getProjectDetailsByName(req, res) {
       ipAddress: record.ipAddress || "",
       dbServer: record.dbServer || "",
       purposeOfUse: record.purposeOfUse || "",
-      
+
       vaScore: record.vaScore || "",
       dateOfVA: record.dateOfVA
-        ? (record.dateOfVA instanceof Date
-            ? record.dateOfVA.toISOString()
-            : record.dateOfVA?.$date || record.dateOfVA || "")
+        ? record.dateOfVA instanceof Date
+          ? record.dateOfVA.toISOString()
+          : record.dateOfVA?.$date || record.dateOfVA || ""
         : "",
       vaReport:
         typeof record.vaReport === "string"
@@ -482,14 +524,14 @@ async function getProjectDetailsByName(req, res) {
         securityAudit: (project.SA?.securityAudit || []).map((audit) => ({
           ...audit,
           auditDate: audit.auditDate
-            ? (audit.auditDate instanceof Date
-                ? audit.auditDate.toISOString()
-                : audit.auditDate?.$date || audit.auditDate || "")
+            ? audit.auditDate instanceof Date
+              ? audit.auditDate.toISOString()
+              : audit.auditDate?.$date || audit.auditDate || ""
             : "",
           expireDate: audit.expireDate
-            ? (audit.expireDate instanceof Date
-                ? audit.expireDate.toISOString()
-                : audit.expireDate?.$date || audit.expireDate || "")
+            ? audit.expireDate instanceof Date
+              ? audit.expireDate.toISOString()
+              : audit.expireDate?.$date || audit.expireDate || ""
             : "",
         })),
       },
@@ -531,9 +573,9 @@ async function getProjectDetailsByName(req, res) {
         vaRecords: drVaRecords,
       },
       createdAt: project.createdAt
-        ? (project.createdAt instanceof Date
-            ? project.createdAt.toISOString()
-            : project.createdAt?.$date || project.createdAt || "")
+        ? project.createdAt instanceof Date
+          ? project.createdAt.toISOString()
+          : project.createdAt?.$date || project.createdAt || ""
         : "",
     };
 
@@ -546,8 +588,6 @@ async function getProjectDetailsByName(req, res) {
     });
   }
 }
-
-
 
 async function getDashboardByType(req, res) {
   try {
@@ -566,8 +606,6 @@ async function getDashboardByType(req, res) {
 
     let matchStage = {};
 
-
-
     if (employeeType === "Admin" && /^\d{4}$/.test(employeeId)) {
       matchStage = {}; // Admin sees everything
     } else if (employeeType === "HOD" && /^\d{4}$/.test(employeeId)) {
@@ -580,7 +618,6 @@ async function getDashboardByType(req, res) {
         .json({ error: "Unauthorized: Invalid employeeId or employeeType" });
     }
 
-
     const pipeline = [
       // Match documents based on role
       { $match: matchStage },
@@ -589,8 +626,8 @@ async function getDashboardByType(req, res) {
       {
         $unwind: {
           path: "$SA.securityAudit",
-          preserveNullAndEmptyArrays: false
-        }
+          preserveNullAndEmptyArrays: false,
+        },
       },
 
       // Project necessary fields, include both dates
@@ -611,8 +648,8 @@ async function getDashboardByType(req, res) {
           auditStatus: "$SA.securityAudit.auditStatus",
           sslStatus: "$SA.securityAudit.sslStatus",
           dataCentre: "$Infra.dataCentre",
-          createdAt: 1
-        }
+          createdAt: 1,
+        },
       },
 
       // Sort audits so the most recent audit appears first
@@ -620,8 +657,8 @@ async function getDashboardByType(req, res) {
         $sort: {
           assetsId: 1,
           auditDate: -1,
-          expireDate: -1  // tie-breaker if auditDate is same
-        }
+          expireDate: -1, // tie-breaker if auditDate is same
+        },
       },
 
       // Group by asset, keeping the first (latest) audit
@@ -642,15 +679,13 @@ async function getDashboardByType(req, res) {
           auditStatus: { $first: "$auditStatus" },
           sslStatus: { $first: "$sslStatus" },
           dataCentre: { $first: "$dataCentre" },
-          createdAt: { $first: "$createdAt" }
-        }
+          createdAt: { $first: "$createdAt" },
+        },
       },
 
       // Optional: Sort final output by expiry if desired
-      { $sort: { expireDate: -1 } }
+      { $sort: { expireDate: -1 } },
     ];
-
-
 
     const dashboardData = await db
       .collection("Assets")
@@ -666,17 +701,99 @@ async function getDashboardByType(req, res) {
   }
 }
 
+// async function updateAssetByProjectName(req, res) {
+//   try {
+//     const { projectName } = req.params;
+//     console.log("🔍 Project Name Received:", projectName);
+
+//     if (!projectName) {
+//       return res.status(400).json({ error: "Project name is required" });
+//     }
+
+//     // Parse incoming fields
+//     const BP = JSON.parse(req.body.BP);
+//     const SA = JSON.parse(req.body.SA);
+//     const TS = JSON.parse(req.body.TS);
+//     const Infra = JSON.parse(req.body.Infra);
+//     const TLS = JSON.parse(req.body.TLS);
+//     const DR = JSON.parse(req.body.DR);
+
+//     console.log("📦 Parsed BP:", BP);
+//     console.log("📦 Parsed SA (before array check):", SA);
+//     console.log("📦 Parsed TS:", TS);
+//     console.log("📦 Parsed Infra:", Infra);
+//     console.log("📦 Parsed TLS:", TLS);
+//     console.log("📦 Parsed DR:", DR);
+
+//     // Ensure SA.securityAudit is an array
+//     if (SA && SA.securityAudit && !Array.isArray(SA.securityAudit)) {
+//       SA.securityAudit = [SA.securityAudit];
+//       console.log("✅ Converted SA.securityAudit to array");
+//     }
+
+//     // Handle certificate file upload
+//     if (req.file && SA.securityAudit?.length > 0) {
+//       SA.securityAudit[0].certificate = req.file.originalname;
+//       console.log(
+//         "📎 Uploaded file attached to securityAudit[0]:",
+//         req.file.originalname
+//       );
+//     }
+
+//     const db = getDb();
+
+//     // Log final update object
+//     console.log("📤 Final Update Payload:", {
+//       BP,
+//       SA,
+//       TS,
+//       Infra,
+//       TLS: { tlsInfo: TLS.tlsInfo || [] },
+//       DR: DR || {},
+//     });
+
+//     // Update document in DB
+//     const result = await db.collection("Assets").updateOne(
+//       { "BP.name": { $regex: new RegExp(`^${projectName}$`, "i") } },
+//       {
+//         $set: {
+//           BP,
+//           SA,
+//           TS,
+//           Infra,
+//           TLS: {
+//             tlsInfo: TLS.tlsInfo || [],
+//           },
+//           DR: DR || {},
+//         },
+//       }
+//     );
+
+//     console.log("📊 Update Result:", result);
+
+//     if (result.matchedCount === 0) {
+//       return res
+//         .status(404)
+//         .json({ error: "Asset not found for this project name" });
+//     }
+
+//     res.status(200).json({
+//       message: "Asset updated successfully",
+//       modifiedCount: result.modifiedCount,
+//     });
+//   } catch (err) {
+//     console.error("❌ Error in updateAssetByProjectName:", err);
+//     res
+//       .status(500)
+//       .json({ error: "Error updating asset", details: err.message });
+//   }
+// }
+
+
 
 async function updateAssetByProjectName(req, res) {
   try {
     const { projectName } = req.params;
-    console.log("🔍 Project Name Received:", projectName);
-
-    if (!projectName) {
-      return res.status(400).json({ error: "Project name is required" });
-    }
-
-    // Parse incoming fields
     const BP = JSON.parse(req.body.BP);
     const SA = JSON.parse(req.body.SA);
     const TS = JSON.parse(req.body.TS);
@@ -684,38 +801,17 @@ async function updateAssetByProjectName(req, res) {
     const TLS = JSON.parse(req.body.TLS);
     const DR = JSON.parse(req.body.DR);
 
-    console.log("📦 Parsed BP:", BP);
-    console.log("📦 Parsed SA (before array check):", SA);
-    console.log("📦 Parsed TS:", TS);
-    console.log("📦 Parsed Infra:", Infra);
-    console.log("📦 Parsed TLS:", TLS);
-    console.log("📦 Parsed DR:", DR);
-
-    // Ensure SA.securityAudit is an array
     if (SA && SA.securityAudit && !Array.isArray(SA.securityAudit)) {
       SA.securityAudit = [SA.securityAudit];
-      console.log("✅ Converted SA.securityAudit to array");
     }
 
-    // Handle certificate file upload
     if (req.file && SA.securityAudit?.length > 0) {
       SA.securityAudit[0].certificate = req.file.originalname;
-      console.log("📎 Uploaded file attached to securityAudit[0]:", req.file.originalname);
     }
 
     const db = getDb();
 
-    // Log final update object
-    console.log("📤 Final Update Payload:", {
-      BP,
-      SA,
-      TS,
-      Infra,
-      TLS: { tlsInfo: TLS.tlsInfo || [] },
-      DR: DR || {}
-    });
-
-    // Update document in DB
+    // Update document AND set updatedByPM: true
     const result = await db.collection("Assets").updateOne(
       { "BP.name": { $regex: new RegExp(`^${projectName}$`, "i") } },
       {
@@ -724,18 +820,15 @@ async function updateAssetByProjectName(req, res) {
           SA,
           TS,
           Infra,
-          TLS: {
-            tlsInfo: TLS.tlsInfo || []
-          },
-          DR: DR || {}
-        }
+          TLS: { tlsInfo: TLS.tlsInfo || [] },
+          DR: DR || {},
+          updatedByPM: true, // ✅ mark as updated
+        },
       }
     );
 
-    console.log("📊 Update Result:", result);
-
     if (result.matchedCount === 0) {
-      return res.status(404).json({ error: "Asset not found for this project name" });
+      return res.status(404).json({ error: "Asset not found" });
     }
 
     res.status(200).json({
@@ -743,7 +836,7 @@ async function updateAssetByProjectName(req, res) {
       modifiedCount: result.modifiedCount,
     });
   } catch (err) {
-    console.error("❌ Error in updateAssetByProjectName:", err);
+    console.error(err);
     res.status(500).json({ error: "Error updating asset", details: err.message });
   }
 }
@@ -753,7 +846,9 @@ async function getOs(req, res) {
     const db = getDb(); // Your DB connection method
     const collection = db.collection("os"); // Collection name for OS data
 
-    const data = await collection.find({}, { projection: { os: 1, version: 1, _id: 0 } }).toArray();
+    const data = await collection
+      .find({}, { projection: { os: 1, version: 1, _id: 0 } })
+      .toArray();
 
     if (!data.length) {
       return res.status(404).json({ message: "No OS versions found" });
@@ -766,139 +861,62 @@ async function getOs(req, res) {
   }
 }
 
-
-
-
-
-
-
 async function getFilteredDashboard(matchStage) {
   const db = getDb();
 
-//   const pipeline = [
-//     { $match: matchStage },
-
-//     {
-//       $project: {
-//         _id: 0,
-//         assetsId: 1,
-//         projectName: "$BP.name",
-//         prismId: "$BP.prismId",
-//         deptName: "$BP.deptName",
-//         HOD: "$BP.HOD",
-//         tlsNextExpiry: { $first: "$TLS.tlsInfo.expiryDate" },
-//         employeeId: "$BP.employeeId",
-//         securityAudits: "$SA.securityAudit",
-//         dataCentre: "$Infra.dataCentre",
-//         createdAt: 1
-//       }
-//     },
-
-//     {
-//   $unwind: {
-//     path: "$securityAudits",
-//     preserveNullAndEmptyArrays: true
-//   }
-// },
-// {
-//   $unwind: {
-//     path: "$TLS.tlsInfo",
-//     preserveNullAndEmptyArrays: true
-//   }
-// },
-// {
-//   $project: {
-//     assetsId: 1,
-//     projectName: 1,
-//     prismId: 1,
-//     deptName: 1,
-//     HOD: 1,
-//     employeeId: 1,
-//     auditDate: "$securityAudits.auditDate",
-//     expireDate: "$securityAudits.expireDate",
-//     tlsNextExpiry: { $first: "$TLS.tlsInfo.expiryDate" },  // ✅ fixed
-//     sslLabScore: "$securityAudits.sslLabScore",
-//     certificate: "$securityAudits.certificate",
-//     auditStatus: "$securityAudits.auditStatus",
-//     sslStatus: "$securityAudits.sslStatus",
-//     dataCentre: 1,
-//     createdAt: 1
-//   }
-// }
-// ,
-//     { $sort: { expireDate: 1 } }
-//   ];
-
-
-const pipeline = [
-  { $match: matchStage },
-  {
-    $project: {
-      _id: 0,
-      assetsId: 1,
-      projectName: "$BP.name",
-      prismId: "$BP.prismId",
-      deptName: "$BP.deptName",
-      HOD: "$BP.HOD",
-      employeeId: "$BP.employeeId",
-      securityAudits: "$SA.securityAudit",
-      dataCentre: "$Infra.dataCentre",
-      TLS: 1,
-      createdAt: 1
-    }
-  },
-  {
-    $unwind: {
-      path: "$securityAudits",
-      preserveNullAndEmptyArrays: true
-    }
-  },
-  {
-    $unwind: {
-      path: "$TLS.tlsInfo",
-      preserveNullAndEmptyArrays: true
-    }
-  },
-  {
-    $project: {
-      assetsId: 1,
-      projectName: 1,
-      prismId: 1,
-      deptName: 1,
-      HOD: 1,
-      employeeId: 1,
-      auditDate: "$securityAudits.auditDate",
-      expireDate: "$securityAudits.expireDate",
-      tlsNextExpiry: "$TLS.tlsInfo.expiryDate", // ✅ fixed
-      sslLabScore: "$securityAudits.sslLabScore",
-      certificate: "$securityAudits.certificate",
-      auditStatus: "$securityAudits.auditStatus",
-      sslStatus: "$securityAudits.sslStatus",
-      dataCentre: 1,
-      createdAt: 1
-    }
-  },
-  { $sort: { expireDate: 1 } }
-];
+  const pipeline = [
+    { $match: matchStage },
+    {
+      $project: {
+        _id: 0,
+        assetsId: 1,
+        projectName: "$BP.name",
+        prismId: "$BP.prismId",
+        deptName: "$BP.deptName",
+        HOD: "$BP.HOD",
+        employeeId: "$BP.employeeId",
+        securityAudits: "$SA.securityAudit",
+        dataCentre: "$Infra.dataCentre",
+        TLS: 1,
+        createdAt: 1,
+      },
+    },
+    {
+      $unwind: {
+        path: "$securityAudits",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $unwind: {
+        path: "$TLS.tlsInfo",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $project: {
+        assetsId: 1,
+        projectName: 1,
+        prismId: 1,
+        deptName: 1,
+        HOD: 1,
+        employeeId: 1,
+        auditDate: "$securityAudits.auditDate",
+        expireDate: "$securityAudits.expireDate",
+        tlsNextExpiry: "$TLS.tlsInfo.expiryDate", // ✅ fixed
+        sslLabScore: "$securityAudits.sslLabScore",
+        certificate: "$securityAudits.certificate",
+        auditStatus: "$securityAudits.auditStatus",
+        sslStatus: "$securityAudits.sslStatus",
+        dataCentre: 1,
+        createdAt: 1,
+      },
+    },
+    { $sort: { expireDate: 1 } },
+  ];
 
   return db.collection("Assets").aggregate(pipeline).toArray();
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 async function assignHodProject(req, res) {
   try {
@@ -908,7 +926,7 @@ async function assignHodProject(req, res) {
       deptName,
       hodName,
       projectManagerName,
-      empCode
+      empCode,
     } = req.body;
 
     if (!projectName || !employeeId || !deptName) {
@@ -921,22 +939,20 @@ async function assignHodProject(req, res) {
       deptName,
       hodName,
       projectManagerName,
-      empCode
+      empCode,
     };
 
     const insertedId = await AssetsModel.assignByHOD(assignData);
 
     res.status(201).json({
       message: "Project assigned successfully by HOD",
-      insertedId
+      insertedId,
     });
-
   } catch (err) {
     console.error("Error in assignHodProject:", err);
     res.status(500).json({ error: "Failed to assign project by HOD" });
   }
 }
-
 
 async function getProjectManagersAssignedByHOD(req, res) {
   try {
@@ -950,29 +966,37 @@ async function getProjectManagersAssignedByHOD(req, res) {
     // Step 1: Get HOD name from Users collection
     const hodUser = await db.collection("Users").findOne({
       employeeId: hodEmployeeId,
-      employeeType: "HOD"
+      employeeType: "HOD",
     });
 
     if (!hodUser || !hodUser.HOD) {
-      return res.status(404).json({ error: "HOD not found or missing HOD name" });
+      return res
+        .status(404)
+        .json({ error: "HOD not found or missing HOD name" });
     }
 
     const hodName = hodUser.HOD;
 
     // Step 2: Get empCodes of PMs assigned by this HOD from AssignedAssets
-    const assignedAssets = await db.collection("AssignedAssets").find({ HOD: hodName }).toArray();
+    const assignedAssets = await db
+      .collection("AssignedAssets")
+      .find({ HOD: hodName })
+      .toArray();
 
-    const empCodes = [...new Set(assignedAssets.map(a => a.empCode))]; // unique empCodes
+    const empCodes = [...new Set(assignedAssets.map((a) => a.empCode))]; // unique empCodes
 
     if (empCodes.length === 0) {
       return res.status(200).json({ projectManagers: [] });
     }
 
     // Step 3: Fetch PM user data from Users where employeeId in empCodes and type is PM
-    const projectManagers = await db.collection("Users").find({
-      employeeId: { $in: empCodes },
-      employeeType: "PM"
-    }).toArray();
+    const projectManagers = await db
+      .collection("Users")
+      .find({
+        employeeId: { $in: empCodes },
+        employeeType: "PM",
+      })
+      .toArray();
 
     res.status(200).json({ projectManagers });
   } catch (err) {
@@ -981,23 +1005,24 @@ async function getProjectManagersAssignedByHOD(req, res) {
   }
 }
 
-
-
 async function getAllProjectManagers(req, res) {
   try {
     const db = getDb();
 
     // Fetch only employeeId and PM name (exclude _id)
-    const projectManagers = await db.collection("Users").find(
-      { employeeType: "PM" },
-      {
-        projection: {
-          employeeId: 1,
-          PM: 1,
-          _id: 0
+    const projectManagers = await db
+      .collection("Users")
+      .find(
+        { employeeType: "PM" },
+        {
+          projection: {
+            employeeId: 1,
+            PM: 1,
+            _id: 0,
+          },
         }
-      }
-    ).toArray();
+      )
+      .toArray();
 
     res.status(200).json({ projectManagers });
   } catch (err) {
@@ -1006,10 +1031,38 @@ async function getAllProjectManagers(req, res) {
   }
 }
 
+// async function getProjectAssignData(req, res) {
+//   try {
+//     const db = getDb();
+//     const collection = db.collection("AssignedAssets"); // Update if your collection name differs
+
+//     const { empCode } = req.params;
+
+//     if (!empCode) {
+//       return res.status(400).json({ message: "empCode is required" });
+//     }
+
+//     const result = await collection.find({ empCode }).toArray();
+
+//     if (result.length === 0) {
+//       return res
+//         .status(404)
+//         .json({ message: "No project data found for the given empCode" });
+//     }
+
+//     res.status(200).json(result);
+//   } catch (err) {
+//     console.error("Error fetching project assignment data:", err);
+//     res.status(500).json({ message: "Internal Server Error" });
+//   }
+// }
+
+
+
 async function getProjectAssignData(req, res) {
   try {
     const db = getDb();
-    const collection = db.collection("AssignedAssets"); // Update if your collection name differs
+    const collection = db.collection("AssignedAssets");
 
     const { empCode } = req.params;
 
@@ -1017,10 +1070,15 @@ async function getProjectAssignData(req, res) {
       return res.status(400).json({ message: "empCode is required" });
     }
 
-    const result = await collection.find({ empCode }).toArray();
+    // Only return projects NOT updated by PM
+    const result = await collection
+      .find({ empCode, updatedByPM: false })
+      .toArray();
 
     if (result.length === 0) {
-      return res.status(404).json({ message: "No project data found for the given empCode" });
+      return res
+        .status(404)
+        .json({ message: "No pending project data found for the given empCode" });
     }
 
     res.status(200).json(result);
@@ -1030,120 +1088,7 @@ async function getProjectAssignData(req, res) {
   }
 }
 
-// const getAuditExpiryForUser = async (req, res) => {
-//   try {
-//     const { employeeId } = req.params;
-//     const db = getDb();
 
-//     // ✅ Fetch user info
-//     const user = await db.collection("Users").findOne({ employeeId });
-//     if (!user) return res.status(404).json({ error: "User not found" });
-
-//     const userType = user.employeeType?.toUpperCase();
-    
-
-//     // ✅ Fetch all assets
-//     const assets = await db.collection("Assets").find({}).toArray();
-//     const now = new Date();
-//     const notifications = [];
-
-//     for (const asset of assets) {
-//       const assetId = asset.assetsId?.trim();
-//       const bp = asset.BP || {};
-
-//       // ✅ User access type check
-//       const isAdmin = userType === "ADMIN";
-//       const isHOD = userType === "HOD" && bp.employeeId === employeeId;
-//       const isPM = userType === "PM" && bp?.nodalOfficerNIC?.empCode === employeeId;
-
-//       if (!isAdmin && !isHOD && !isPM) continue;
-
-//       const messages = [];
-
-//       // ✅ Latest Security Audit
-//       if (asset.SA?.securityAudit?.length) {
-//         const latestAudit = asset.SA.securityAudit.reduce((latest, current) =>
-//           new Date(current.expireDate) > new Date(latest.expireDate) ? current : latest
-//         );
-
-//         if (latestAudit) {
-//           const auditExpireDate = new Date(latestAudit.expireDate);
-//           const daysLeft = Math.ceil((auditExpireDate - now) / (1000 * 60 * 60 * 24));
-
-//           if (daysLeft < 0) {
-//             messages.push({
-//               type: "Security Audit",
-//               status: "Expired",
-//               expiredOn: auditExpireDate.toISOString().split("T")[0],
-//               assetId,
-//               message: `Security Audit expired for asset ${assetId} on ${auditExpireDate.toDateString()}`
-//             });
-//             // if u want to show notification between 7 days then change this 
-//           } else if (daysLeft <= 7) {
-//             messages.push({
-//               type: "Security Audit",
-//               status: "Expiring Soon",
-//               expiresIn: `${daysLeft} day(s)`,
-//               expireDate: auditExpireDate.toISOString().split("T")[0],
-//               assetId,
-//               message: `Security Audit for asset ${assetId} will expire in ${daysLeft} day(s) on ${auditExpireDate.toDateString()}`
-//             });
-//           }
-//         }
-//       }
-
-//       // ✅ Latest TLS Certificate
-//       if (asset.TLS?.tlsInfo?.length) {
-//         const latestTLS = asset.TLS.tlsInfo.reduce((latest, current) =>
-//           new Date(current.expiryDate) > new Date(latest.expiryDate) ? current : latest
-//         );
-
-//         if (latestTLS) {
-//           const tlsExpireDate = new Date(latestTLS.expiryDate);
-//           const daysLeftTLS = Math.ceil((tlsExpireDate - now) / (1000 * 60 * 60 * 24));
-
-//           if (daysLeftTLS < 0) {
-//             messages.push({
-//               type: "TLS Certificate",
-//               status: "Expired",
-//               expiredOn: tlsExpireDate.toISOString().split("T")[0],
-//               assetId,
-//               message: `TLS Certificate expired for asset ${assetId} on ${tlsExpireDate.toDateString()}`
-//             });
-//           } else if (daysLeftTLS <= 7) {
-//             messages.push({
-//               type: "TLS Certificate",
-//               status: "Expiring Soon",
-//               expiresIn: `${daysLeftTLS} day(s)`,
-//               expireDate: tlsExpireDate.toISOString().split("T")[0],
-//               assetId,
-//               message: `TLS Certificate for asset ${assetId} will expire in ${daysLeftTLS} day(s) on ${tlsExpireDate.toDateString()}`
-//             });
-//           }
-//         }
-//       }
-
-//       // ✅ Combine messages for this asset
-//       if (messages.length > 0) {
-//         notifications.push({
-//           assetId,
-//           messages
-//         });
-//       }
-//     }
-
-//     return res.json({
-//       employeeId,
-//       employeeType: userType,
-//       totalNotifications: notifications.reduce((count, notif) => count + notif.messages.length, 0),
-//       notifications,
-//     });
-
-//   } catch (err) {
-//     console.error("Error in getAuditExpiryForUser:", err);
-//     return res.status(500).json({ error: "Internal server error" });
-//   }
-// };
 
 const getAuditExpiryForUser = async (req, res) => {
   try {
@@ -1168,7 +1113,8 @@ const getAuditExpiryForUser = async (req, res) => {
       // ✅ User access type check
       const isAdmin = userType === "ADMIN";
       const isHOD = userType === "HOD" && bp.employeeId === employeeId;
-      const isPM = userType === "PM" && bp?.nodalOfficerNIC?.empCode === employeeId;
+      const isPM =
+        userType === "PM" && bp?.nodalOfficerNIC?.empCode === employeeId;
 
       if (!isAdmin && !isHOD && !isPM) continue;
 
@@ -1176,11 +1122,14 @@ const getAuditExpiryForUser = async (req, res) => {
 
       // ✅ Latest Security Audit (last added)
       if (asset.SA?.securityAudit?.length) {
-        const latestAudit = asset.SA.securityAudit[asset.SA.securityAudit.length - 1];
+        const latestAudit =
+          asset.SA.securityAudit[asset.SA.securityAudit.length - 1];
 
         if (latestAudit?.expireDate) {
           const auditExpireDate = new Date(latestAudit.expireDate);
-          const daysLeft = Math.ceil((auditExpireDate - now) / (1000 * 60 * 60 * 24));
+          const daysLeft = Math.ceil(
+            (auditExpireDate - now) / (1000 * 60 * 60 * 24)
+          );
 
           if (daysLeft < 0) {
             messages.push({
@@ -1188,7 +1137,7 @@ const getAuditExpiryForUser = async (req, res) => {
               status: "Expired",
               expiredOn: auditExpireDate.toISOString().split("T")[0],
               assetId,
-              message: `Security Audit expired for asset ${assetId} on ${auditExpireDate.toDateString()}`
+              message: `Security Audit expired for asset ${assetId} on ${auditExpireDate.toDateString()}`,
             });
           } else if (daysLeft <= 7) {
             messages.push({
@@ -1197,7 +1146,7 @@ const getAuditExpiryForUser = async (req, res) => {
               expiresIn: `${daysLeft} day(s)`,
               expireDate: auditExpireDate.toISOString().split("T")[0],
               assetId,
-              message: `Security Audit for asset ${assetId} will expire in ${daysLeft} day(s) on ${auditExpireDate.toDateString()}`
+              message: `Security Audit for asset ${assetId} will expire in ${daysLeft} day(s) on ${auditExpireDate.toDateString()}`,
             });
           }
         }
@@ -1209,7 +1158,9 @@ const getAuditExpiryForUser = async (req, res) => {
 
         if (latestTLS?.expiryDate) {
           const tlsExpireDate = new Date(latestTLS.expiryDate);
-          const daysLeftTLS = Math.ceil((tlsExpireDate - now) / (1000 * 60 * 60 * 24));
+          const daysLeftTLS = Math.ceil(
+            (tlsExpireDate - now) / (1000 * 60 * 60 * 24)
+          );
 
           if (daysLeftTLS < 0) {
             messages.push({
@@ -1217,7 +1168,7 @@ const getAuditExpiryForUser = async (req, res) => {
               status: "Expired",
               expiredOn: tlsExpireDate.toISOString().split("T")[0],
               assetId,
-              message: `TLS Certificate expired for asset ${assetId} on ${tlsExpireDate.toDateString()}`
+              message: `TLS Certificate expired for asset ${assetId} on ${tlsExpireDate.toDateString()}`,
             });
           } else if (daysLeftTLS <= 7) {
             messages.push({
@@ -1226,7 +1177,7 @@ const getAuditExpiryForUser = async (req, res) => {
               expiresIn: `${daysLeftTLS} day(s)`,
               expireDate: tlsExpireDate.toISOString().split("T")[0],
               assetId,
-              message: `TLS Certificate for asset ${assetId} will expire in ${daysLeftTLS} day(s) on ${tlsExpireDate.toDateString()}`
+              message: `TLS Certificate for asset ${assetId} will expire in ${daysLeftTLS} day(s) on ${tlsExpireDate.toDateString()}`,
             });
           }
         }
@@ -1236,7 +1187,7 @@ const getAuditExpiryForUser = async (req, res) => {
       if (messages.length > 0) {
         notifications.push({
           assetId,
-          messages
+          messages,
         });
       }
     }
@@ -1244,15 +1195,60 @@ const getAuditExpiryForUser = async (req, res) => {
     return res.json({
       employeeId,
       employeeType: userType,
-      totalNotifications: notifications.reduce((count, notif) => count + notif.messages.length, 0),
+      totalNotifications: notifications.reduce(
+        (count, notif) => count + notif.messages.length,
+        0
+      ),
       notifications,
     });
-
   } catch (err) {
     console.error("Error in getAuditExpiryForUser:", err);
     return res.status(500).json({ error: "Internal server error" });
   }
 };
+
+// async function getProjectsAssignedToPM(req, res) {
+//   try {
+//     const { empCode } = req.params;
+//     console.log("Received empCode:", empCode); // DEBUG LOG
+
+//     if (!empCode) {
+//       return res.status(400).json({ message: "empCode is required" });
+//     }
+
+//     const db = getDb();
+//     const collection = db.collection("AssignedAssets");
+
+//     // Only return specific fields
+//     const projects = await collection
+//       .find(
+//         { empCode },
+//         {
+//           projection: {
+//             projectName: 1,
+//             deptName: 1,
+//             HOD: 1,
+//             projectManagerName: 1,
+//             empCode: 1,
+//             employeeId: 1,
+//             _id: 0,
+//           },
+//         }
+//       )
+//       .toArray();
+
+//     if (projects.length === 0) {
+//       return res
+//         .status(404)
+//         .json({ message: "No projects found for the given empCode" });
+//     }
+
+//     res.status(200).json(projects);
+//   } catch (err) {
+//     console.error("Error fetching PM projects:", err);
+//     res.status(500).json({ message: "Internal Server Error" });
+//   }
+// }
 
 async function getProjectsAssignedToPM(req, res) {
   try {
@@ -1266,15 +1262,28 @@ async function getProjectsAssignedToPM(req, res) {
     const db = getDb();
     const collection = db.collection("AssignedAssets");
 
-    // Only return specific fields
+    // Only fetch projects with updatedByPM = false
     const projects = await collection
-      .find({ empCode }, { projection: { projectName: 1, 
-deptName: 1, HOD: 1, projectManagerName: 1, empCode: 1,
- employeeId: 1, _id: 0 } })
+      .find(
+        { empCode, updatedByPM: false }, // ✅ filter
+        {
+          projection: {
+            projectName: 1,
+            deptName: 1,
+            HOD: 1,
+            projectManagerName: 1,
+            empCode: 1,
+            employeeId: 1,
+            _id: 0,
+          },
+        }
+      )
       .toArray();
 
     if (projects.length === 0) {
-      return res.status(404).json({ message: "No projects found for the given empCode" });
+      return res
+        .status(404)
+        .json({ message: "No projects found for the given empCode" });
     }
 
     res.status(200).json(projects);
@@ -1284,13 +1293,16 @@ deptName: 1, HOD: 1, projectManagerName: 1, empCode: 1,
   }
 }
 
+
 async function getDatabaseList(req, res) {
   try {
     const db = getDb();
     const collection = db.collection("database"); // Your collection name
 
     // const data = await collection.find({ projection: { DB: 1, Version: 1,  _id: 0 } }).toArray(); // Fetch all entries
-   const data = await collection.find({}, { projection: { DB: 1, Version: 1, _id: 0 } }).toArray();
+    const data = await collection
+      .find({}, { projection: { DB: 1, Version: 1, _id: 0 } })
+      .toArray();
 
     if (!data.length) {
       return res.status(404).json({ message: "No database versions found" });
@@ -1305,52 +1317,18 @@ async function getDatabaseList(req, res) {
 
 
 
-
-
-
-
-
-
-
-// async function filterByDataCenter(req, res) {
-//   try {
-//     const { dataCenter, employeeId } = req.params;
-
-//     if (!dataCenter || !employeeId) {
-//       return res.status(400).json({ error: "Data center name and Employee ID are required." });
-//     }
-
-//     // Optional: Trim and case-insensitive match
-//     const matchStage = {
-//       "Infra.dataCentre": { $regex: new RegExp(`^${dataCenter}$`, "i") },
-//       "BP.employeeId": employeeId.trim()
-//     };
-
-//     const data = await getFilteredDashboard(matchStage);
-
-//     if (!data.length) {
-//       return res.status(404).json({ error: "No assets found for this data center and employee." });
-//     }
-
-//     res.status(200).json(data);
-//   } catch (error) {
-//     console.error("filterByDataCenter error:", error);
-//     res.status(500).json({ error: "Internal Server Error", details: error.message });
-//   }
-// }
-
 async function filterByDataCenter(req, res) {
   try {
     const { dataCenter, employeeId, employeeType } = req.params;
 
     if (!dataCenter || !employeeId || !employeeType) {
-      return res.status(400).json({ 
-        error: "Data center name, Employee ID, and Employee Type are required." 
+      return res.status(400).json({
+        error: "Data center name, Employee ID, and Employee Type are required.",
       });
     }
 
     const matchStage = {
-      "Infra.dataCentre": { $regex: new RegExp(`^${dataCenter}$`, "i") }
+      "Infra.dataCentre": { $regex: new RegExp(`^${dataCenter}$`, "i") },
     };
 
     if (employeeType === "PM") {
@@ -1362,25 +1340,20 @@ async function filterByDataCenter(req, res) {
     const data = await getFilteredDashboard(matchStage);
 
     if (!data.length) {
-      return res.status(404).json({ 
-        error: "No assets found for this data center and employee." 
+      return res.status(404).json({
+        error: "No assets found for this data center and employee.",
       });
     }
 
     res.status(200).json(data);
   } catch (error) {
     console.error("filterByDataCenter error:", error);
-    res.status(500).json({ 
-      error: "Internal Server Error", 
-      details: error.message 
+    res.status(500).json({
+      error: "Internal Server Error",
+      details: error.message,
     });
   }
 }
-
-
-
-
-
 
 // async function filterByPrismId(req, res) {
 //   try {
@@ -1408,19 +1381,18 @@ async function filterByDataCenter(req, res) {
 //   }
 // }
 
-
 async function filterByPrismId(req, res) {
   try {
     const { prismId, employeeId, employeeType } = req.params;
 
     if (!prismId || !employeeId || !employeeType) {
-      return res.status(400).json({ 
-        error: "Prism ID, Employee ID, and Employee Type are required." 
+      return res.status(400).json({
+        error: "Prism ID, Employee ID, and Employee Type are required.",
       });
     }
 
     const matchStage = {
-      "BP.prismId": prismId.trim()
+      "BP.prismId": prismId.trim(),
     };
 
     if (employeeType === "PM") {
@@ -1432,32 +1404,32 @@ async function filterByPrismId(req, res) {
     const data = await getFilteredDashboard(matchStage);
 
     if (!data.length) {
-      return res.status(404).json({ 
-        error: "No assets found for this Prism ID and employee." 
+      return res.status(404).json({
+        error: "No assets found for this Prism ID and employee.",
       });
     }
 
     res.status(200).json(data);
   } catch (error) {
     console.error("filterByPrismId error:", error);
-    res.status(500).json({ 
-      error: "Internal Server Error", 
-      details: error.message 
+    res.status(500).json({
+      error: "Internal Server Error",
+      details: error.message,
     });
   }
 }
-
-
-
-
-
 
 async function filterByDepartment(req, res) {
   try {
     const { deptName, employeeId, employeeType } = req.params;
 
     if (!deptName || !employeeId || !employeeType) {
-      return res.status(400).json({ error: "Department name, Employee ID, and Employee Type are required." });
+      return res
+        .status(400)
+        .json({
+          error:
+            "Department name, Employee ID, and Employee Type are required.",
+        });
     }
 
     const matchStage = {
@@ -1473,13 +1445,17 @@ async function filterByDepartment(req, res) {
     const data = await getFilteredDashboard(matchStage);
 
     if (!data.length) {
-      return res.status(404).json({ error: "No assets found for this department and employee." });
+      return res
+        .status(404)
+        .json({ error: "No assets found for this department and employee." });
     }
 
     res.status(200).json(data);
   } catch (error) {
     console.error("filterByDepartment error:", error);
-    res.status(500).json({ error: "Internal Server Error", details: error.message });
+    res
+      .status(500)
+      .json({ error: "Internal Server Error", details: error.message });
   }
 }
 
@@ -1488,10 +1464,14 @@ async function getFrontend(req, res) {
     const db = getDb(); // Ensure this returns your MongoDB instance
     const collection = db.collection("frontend");
 
-    const data = await collection.find({}, { projection: { technology: 1, version: 1, _id: 0 } }).toArray();
+    const data = await collection
+      .find({}, { projection: { technology: 1, version: 1, _id: 0 } })
+      .toArray();
 
     if (!data.length) {
-      return res.status(404).json({ message: "No frontend technologies found" });
+      return res
+        .status(404)
+        .json({ message: "No frontend technologies found" });
     }
 
     res.status(200).json(data);
@@ -1502,8 +1482,301 @@ async function getFrontend(req, res) {
 }
 
 
+// Mark project as editable (updatedByPM: false) when Edit button clicked
+// async function markProjectForEdit(req, res) {
+//   try {
+//     const { projectName, empCode } = req.body;
+
+//     if (!projectName || !empCode) {
+//       return res.status(400).json({ message: "projectName and empCode are required" });
+//     }
+
+//     const db = getDb();
+//     const result = await db.collection("AssignedAssets").updateOne(
+//       { projectName: projectName, empCode: empCode }, // exact match
+//       { $set: { updatedByPM: false } }
+//     );
+
+//     if (result.matchedCount === 0) {
+//       return res.status(404).json({ message: "Project not found or already updated" });
+//     }
+
+//     res.status(200).json({ message: "Project marked for edit (updatedByPM=false)" });
+//   } catch (err) {
+//     console.error("Error in markProjectForEdit:", err);
+//     res.status(500).json({ message: "Internal Server Error", details: err.message });
+//   }
+// }
 
 
+// async function updateProjectStatus(req, res) {
+//   try {
+//     const { projectName, empCode } = req.body;
+//     console.log("[INFO] Payload:", { projectName, empCode });
+
+//     const db = getDb();
+//     const result = await db.collection("AssignedAssets").updateOne(
+//   { projectName: projectName, empCode: empCode },
+//   { $set: { updatedByPM: true, updatedAt: new Date() } }
+// );
+
+//     console.log("[INFO] MongoDB update result:", result);
+
+//     if (result.matchedCount === 0) {
+//       return res.status(404).json({ message: "Project not found or empCode mismatch" });
+//     }
+
+//     res.status(200).json({ message: "Project status updated successfully" });
+//   } catch (err) {
+//     console.error("[ERROR] Error updating project status:", err);
+//     res.status(500).json({ message: err.message });
+//   }
+// }
+
+
+
+
+
+// async function markProjectForEdit(req, res) {
+//   try {
+//     const { projectName, empCode, employeeId } = req.body;
+
+//     if (!projectName || (!empCode && !employeeId)) {
+//       return res.status(400).json({ message: "projectName and empCode/employeeId are required" });
+//     }
+
+//     const db = getDb();
+
+//     // Decide which field to match & update based on payload
+//     let filter = { projectName };
+//     let update = {};
+
+//     if (empCode) {
+//       // PM case
+//       filter.empCode = empCode;
+//       update.updatedByPM = false;
+//     } else if (employeeId) {
+//       // HOD/Admin case
+//       filter.employeeId = employeeId;
+//       update.updatedByHOD = false;
+//     }
+
+//     const result = await db.collection("AssignedAssets").updateOne(
+//       filter,
+//       { $set: update }
+//     );
+
+//     if (result.matchedCount === 0) {
+//       return res.status(404).json({ message: "Project not found or mismatch" });
+//     }
+
+//     res.status(200).json({ message: "Project marked for edit successfully" });
+//   } catch (err) {
+//     console.error("Error in markProjectForEdit:", err);
+//     res.status(500).json({ message: "Internal Server Error", details: err.message });
+//   }
+// }
+
+// async function markProjectForEdit(req, res) {
+//   try {
+//     const { projectName, empCode, employeeId } = req.body;
+
+//     if (!projectName || (!empCode && !employeeId)) {
+//       return res.status(400).json({ message: "projectName and empCode or employeeId are required" });
+//     }
+
+//     const db = getDb();
+
+//     // Build filter based on provided identifiers
+//     let filter = { projectName };
+//     let updateFields = {};
+
+//     if (empCode) {
+//       filter.empCode = empCode;
+//       updateFields.updatedByPM = false;
+//     }
+//     if (employeeId) {
+//       filter.employeeId = employeeId;
+//       updateFields.updatedByHOD = false;
+//     }
+
+//     const result = await db.collection("AssignedAssets").updateOne(filter, { $set: updateFields });
+
+//     if (result.matchedCount === 0) {
+//       return res.status(404).json({ message: "Project not found or mismatch" });
+//     }
+
+//     res.status(200).json({ message: "Project marked for edit successfully" });
+//   } catch (err) {
+//     console.error("Error in markProjectForEdit:", err);
+//     res.status(500).json({ message: "Internal Server Error", details: err.message });
+//   }
+// }
+
+
+async function markProjectForEdit(req, res) {
+  try {
+    const { projectName, empCode, employeeId, adminId } = req.body;
+
+    if (!projectName || (!empCode && !employeeId && !adminId)) {
+      return res.status(400).json({ message: "projectName and empCode or employeeId or adminId are required" });
+    }
+
+    const db = getDb();
+
+    // Build filter based on provided identifiers
+    let filter = { projectName };
+    let updateFields = {};
+
+    if (empCode) {
+      filter.empCode = empCode;
+      updateFields.updatedByPM = false;
+    }
+    if (employeeId) {
+      filter.employeeId = employeeId;
+      updateFields.updatedByHOD = false;
+    }
+    if (adminId) {
+      filter.adminId = adminId;
+      updateFields.updatedByAdmin = false;
+    }
+
+    const result = await db.collection("AssignedAssets").updateOne(filter, { $set: updateFields });
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ message: "Project not found or mismatch" });
+    }
+
+    res.status(200).json({ message: "Project marked for edit successfully" });
+  } catch (err) {
+    console.error("Error in markProjectForEdit:", err);
+    res.status(500).json({ message: "Internal Server Error", details: err.message });
+  }
+}
+
+// async function updateProjectStatus(req, res) {
+//   try {
+//     const { projectName, empCode, employeeId } = req.body;
+
+//     if (!projectName || (!empCode && !employeeId)) {
+//       return res.status(400).json({ message: "projectName and empCode/employeeId are required" });
+//     }
+
+//     const db = getDb();
+
+//     let filter = { projectName };
+//     let update = { updatedAt: new Date() };
+
+//     if (empCode) {
+//       filter.empCode = empCode;
+//       update.updatedByPM = true;
+//     } else if (employeeId) {
+//       filter.employeeId = employeeId;
+//       update.updatedByHOD = true;
+//     }
+
+//     const result = await db.collection("AssignedAssets").updateOne(filter, { $set: update });
+
+//     if (result.matchedCount === 0) {
+//       return res.status(404).json({ message: "Project not found or mismatch" });
+//     }
+
+//     res.status(200).json({ message: "Project status updated successfully" });
+//   } catch (err) {
+//     console.error("Error updating project status:", err);
+//     res.status(500).json({ message: "Internal Server Error", details: err.message });
+//   }
+// }
+
+// async function updateProjectStatus(req, res) {
+//   try {
+//     const { projectName, empCode, employeeId } = req.body;
+
+//     if (!projectName || (!empCode && !employeeId)) {
+//       return res.status(400).json({ message: "projectName and empCode or employeeId are required" });
+//     }
+
+//     const db = getDb();
+
+//     // Build filter based on provided identifiers
+//     const filter = { projectName };
+//     const updateFields = { updatedAt: new Date() };
+
+//     if (empCode) {
+//       filter.empCode = empCode;
+//       updateFields.updatedByPM = true;
+//     }
+//     if (employeeId) {
+//       filter.employeeId = employeeId;
+//       updateFields.updatedByHOD = true;
+//     }
+
+//     const result = await db.collection("AssignedAssets").updateOne(filter, { $set: updateFields });
+
+//     if (result.matchedCount === 0) {
+//       return res.status(404).json({ message: "Project not found or mismatch" });
+//     }
+
+//     res.status(200).json({ message: "Project status updated successfully" });
+//   } catch (err) {
+//     console.error("Error updating project status:", err);
+//     res.status(500).json({ message: "Internal Server Error", details: err.message });
+//   }
+// }
+
+
+
+
+async function updateProjectStatus(req, res) {
+  try {
+    const { projectName, empCode, employeeId, adminId } = req.body;
+
+    if (!projectName || (!empCode && !employeeId && !adminId)) {
+      return res.status(400).json({ message: "projectName and empCode or employeeId or adminId are required" });
+    }
+
+    const db = getDb();
+
+    // Build filter based on provided identifiers
+    const filter = { projectName };
+    const updateFields = { updatedAt: new Date() };
+
+    if (empCode) {
+      filter.empCode = empCode;
+      updateFields.updatedByPM = true;
+    }
+    if (employeeId) {
+      filter.employeeId = employeeId;
+      updateFields.updatedByHOD = true;
+    }
+    if (adminId) {
+      filter.adminId = adminId;
+      updateFields.updatedByAdmin = true;
+    }
+
+    const result = await db.collection("AssignedAssets").updateOne(filter, { $set: updateFields });
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ message: "Project not found or mismatch" });
+    }
+
+    res.status(200).json({ message: "Project status updated successfully" });
+  } catch (err) {
+    console.error("Error updating project status:", err);
+    res.status(500).json({ message: "Internal Server Error", details: err.message });
+  }
+}
+
+async function getDepartments(req, res) {
+  try {
+    const db = getDb();
+    const departments = await db.collection("departments").find({}).toArray();
+    res.status(200).json(departments);
+  } catch (err) {
+    console.error("Error fetching departments:", err);
+    res.status(500).json({ message: "Internal Server Error", details: err.message });
+  }
+}
 
 module.exports = {
   createAsset,
@@ -1519,12 +1792,10 @@ module.exports = {
   getProjectDetailsByName,
   getDashboardByType,
   updateAssetByProjectName,
-  
+
   filterByDepartment,
   filterByDataCenter,
   filterByPrismId,
-
- 
 
   assignHodProject,
   getProjectManagersAssignedByHOD,
@@ -1537,9 +1808,10 @@ module.exports = {
   // getAssetByProjectName, // Make sure this exists!
   // getAllProjects         // Make sure this exists!
 
-
   getAuditExpiryForUser,
   getOs,
-  getFrontend
-
+  getFrontend,
+  markProjectForEdit,
+  updateProjectStatus,
+  getDepartments
 };

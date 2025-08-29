@@ -59,7 +59,7 @@ app.get("/session-check", (req, res) => {
   const now = Date.now();
   const sessionAge = now - session.createdAt;
 
-  if (sessionAge > 300000000) { // 1 minute
+  if (sessionAge > 300000000000000000) { // 1 minute
     req.session.destroy(() => {
       console.log("Session expired and destroyed.");
       res.status(200).json({ loggedIn: false });

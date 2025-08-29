@@ -28,6 +28,8 @@ const DigitalAssetsModel = {
     throw new Error("Missing required asset sections (BP, SA, TS, Infra)");
   }
 
+
+  
   // Validate and transform VA records
   const validatedVaRecords = data.Infra.vaRecords.map((record, index) => {
     if (!record.ipAddress) {
@@ -83,15 +85,15 @@ const DigitalAssetsModel = {
               typeOfAudit: record.typeOfAudit || "N/A",
               auditingAgency: record.auditingAgency || "N/A",
               auditDate: record.auditDate || "",
-              // expireDate: record.expireDate || "",
-              expireDate: record.expireDate ?? null,
+              expireDate: record.expireDate || "",
+              // expireDate: record.expireDate ?? null,
 
               certificate:
                 typeof record.certificate === "string"
                   ? record.certificate
                   : record.certificate?.filename || "N/A",
-              auditStatus: record.auditStatus || "Completed",
-              sslStatus: record.sslStatus || "Valid"
+              auditStatus: record.auditStatus || "",
+              sslStatus: record.sslStatus || ""
             }))
           : [
               {
@@ -99,10 +101,10 @@ const DigitalAssetsModel = {
                 typeOfAudit: "N/A",
                 auditingAgency: "N/A",
                 auditDate: "",
-                expireDate: null,
+                expireDate: "",
                 certificate: "N/A",
-                auditStatus: "Completed",
-                sslStatus: "Valid"
+                auditStatus: "",
+                sslStatus: ""
               }
             ]
     },
@@ -171,7 +173,8 @@ const DigitalAssetsModel = {
   
 
   const result = await db.collection("Assets").insertOne(assetProfile);
-  return result.insertedId;
+  // return result.insertedId;
+  return assetProfile.assetsId;
 },
 
   async getAssetByAssetsId(assetsId) {

@@ -161,6 +161,13 @@ router.get("/project-assignments/:empCode", AssetsController.getProjectAssignDat
 router.get("/project-assignments/by-pm/:empCode", AssetsController.getProjectsAssignedToPM);
 router.get("/databases", AssetsController.getDatabaseList);
 
+router.patch("/project-assignments/mark-for-edit", AssetsController.markProjectForEdit);
+
+router.get("/getDepartments", AssetsController.getDepartments);
+
+
+router.put("/project/update-status", AssetsController.updateProjectStatus);
+
 
 module.exports = router;
 
