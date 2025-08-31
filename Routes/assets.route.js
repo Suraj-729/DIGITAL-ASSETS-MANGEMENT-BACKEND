@@ -50,11 +50,7 @@ router.get("/view-va-report/:filename", (req, res) => {
 });
 
 
-// Verification endpoint
 
-
-  
-  // module.exports = router;
 
 // User routes
 router.post('/users/login', UserController.login);
@@ -156,7 +152,7 @@ router.post('/addprojectbyhod',AssetsController.assignHodProject);
 
 router.get('/projectsAssignedByHOD/:employeeId',AssetsController.getProjectManagersAssignedByHOD);
 router.get('/allProjectManagers', AssetsController.getAllProjectManagers);
-
+router.get('/allhods', AssetsController.getAllHods);
 router.get("/project-assignments/:empCode", AssetsController.getProjectAssignData);
 router.get("/project-assignments/by-pm/:empCode", AssetsController.getProjectsAssignedToPM);
 router.get("/databases", AssetsController.getDatabaseList);
@@ -168,7 +164,7 @@ router.get("/getDepartments", AssetsController.getDepartments);
 
 router.put("/project/update-status", AssetsController.updateProjectStatus);
 
-
+router.get("/project-assignments/hod/:employeeId", AssetsController.getProjectAssignDataForHOD);
 module.exports = router;
 
 

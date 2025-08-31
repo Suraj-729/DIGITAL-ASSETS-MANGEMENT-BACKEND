@@ -3,32 +3,7 @@ const { getDb } = require("../Db/Db");
 const moment = require("moment");
 const { ObjectId } = require("mongodb");
 
-// async function createAsset(req, res) {
-//   try {
-//     // Parse the JSON strings from multipart/form-data
-//     const BP = JSON.parse(req.body.BP);
-//     const SA = JSON.parse(req.body.SA);
-//     const TS = JSON.parse(req.body.TS);
-//     const Infra = JSON.parse(req.body.Infra);
-//     const TLS = JSON.parse(req.body.TLS);
-//     const DR = JSON.parse(req.body.DR);
 
-//     const assetId = await AssetsModel.createAsset({
-//       BP,
-//       SA,
-//       TS,
-//       Infra,
-//       TLS,
-//       DR,
-//       certificate: req.file || null,
-//     });
-
-//     res.status(201).json({ assetId });
-//   } catch (err) {
-//     console.error("Error in createAsset:", err);
-//     res.status(500).json({ error: "Failed to create asset" });
-//   }
-// }
 async function createAsset(req, res) {
   try {
     const BP = JSON.parse(req.body.BP);
@@ -54,16 +29,16 @@ async function createAsset(req, res) {
     // Step 2: Update AssignedAssets for this PM/project
     const db = getDb();
     const updateResult = await db.collection("AssignedAssets").updateOne(
-      { 
+      {
         projectName: BP.name,
-        empCode: BP.nodalOfficerNIC?.empCode || ""
+        empCode: BP.nodalOfficerNIC?.empCode || "",
       },
-      { 
-        $set: { 
+      {
+        $set: {
           updatedByPM: true,
           updatedAt: new Date(),
-          linkedAssetId: assetId // <-- store actual assetsId here
-        }
+          linkedAssetId: assetId, // <-- store actual assetsId here
+        },
       }
     );
 
@@ -76,9 +51,6 @@ async function createAsset(req, res) {
     res.status(500).json({ error: "Failed to create asset" });
   }
 }
-
-
-
 
 async function getAsset(req, res) {
   try {
@@ -407,12 +379,196 @@ async function getDashboardAllProjectBySIO(req, res) {
   }
 }
 
+// async function getProjectDetailsByName(req, res) {
+//   try {
+//     const db = getDb();
+//     const { projectName } = req.params;
+
+//     if (!projectName) {
+//       return res.status(400).json({ error: "Project name is required" });
+//     }
+
+//     const project = await db.collection("Assets").findOne(
+//       { "BP.name": { $regex: new RegExp(`^${projectName}$`, "i") } },
+//       {
+//         projection: {
+//           _id: 0,
+//           assetsId: 1,
+//           projectName: 1,
+//           BP: 1,
+//           SA: 1,
+//           Infra: 1,
+//           TS: 1,
+//           DR: 1,
+//           TLS: 1,
+//           createdAt: 1,
+//           employeeId: 1,
+//         },
+//       }
+//     );
+
+//     if (!project) {
+//       return res.status(404).json({ error: "Project not found" });
+//     }
+
+//     // Format TLS Info
+//     const tlsInfo = (project.TLS?.tlsInfo || []).map((record) => ({
+//       domainName: record.domainName || "",
+//       certProvider: record.certProvider || "",
+//       issueDate: record.issueDate
+//         ? record.issueDate instanceof Date
+//           ? record.issueDate.toISOString()
+//           : record.issueDate?.$date || record.issueDate || ""
+//         : "",
+//       expiryDate: record.expiryDate
+//         ? record.expiryDate instanceof Date
+//           ? record.expiryDate.toISOString()
+//           : record.expiryDate?.$date || record.expiryDate || ""
+//         : "",
+//       tlsStatus: record.tlsStatus || "",
+//       score: record.score || "",
+//       procuredFrom: record.procuredFrom || "",
+//     }));
+
+//     // Format DR VA Records
+//     const drVaRecords = (project.DR?.vaRecords || []).map((record) => ({
+//       ipAddress: record.ipAddress || "",
+//       dbServerIp: record.dbServerIp || "",
+//       purpose: record.purpose || "",
+//       vaScore: record.vaScore || "",
+//       dateOfVA:
+//         record.dateOfVA || record.vaDate
+//           ? (record.dateOfVA || record.vaDate) instanceof Date
+//             ? (record.dateOfVA || record.vaDate).toISOString()
+//             : (record.dateOfVA || record.vaDate)?.$date ||
+//               record.dateOfVA ||
+//               record.vaDate ||
+//               ""
+//           : "",
+//       vaReport:
+//         typeof record.vaReport === "string"
+//           ? record.vaReport
+//           : record.vaReport?.filename || "",
+//     }));
+
+//     // Format Infra VA Records
+//     const infraVaRecords = (project.Infra?.vaRecords || []).map((record) => ({
+//       ipAddress: record.ipAddress || "",
+//       dbServer: record.dbServer || "",
+//       purposeOfUse: record.purposeOfUse || "",
+
+//       vaScore: record.vaScore || "",
+//       dateOfVA: record.dateOfVA
+//         ? record.dateOfVA instanceof Date
+//           ? record.dateOfVA.toISOString()
+//           : record.dateOfVA?.$date || record.dateOfVA || ""
+//         : "",
+//       vaReport:
+//         typeof record.vaReport === "string"
+//           ? record.vaReport
+//           : record.vaReport?.filename || "",
+//     }));
+
+//     const response = {
+//       assetsId: project.assetsId || "",
+//       projectName: project.projectName || project.BP?.name || "",
+//       BP: {
+//         prismId: project.BP?.prismId || "",
+//         deptName: project.BP?.deptName || "",
+//         employeeId: project.BP?.employeeId || project.employeeId || "",
+//         url: project.BP?.url || "",
+//         publicIp: project.BP?.publicIp || "",
+//         HOD: project.BP?.HOD || "",
+//         nodalOfficerNIC: project.BP?.nodalOfficerNIC || {
+//           name: "",
+//           empCode: "",
+//           mobile: "",
+//           email: "",
+//         },
+//         nodalOfficerDept: project.BP?.nodalOfficerDept || {
+//           name: "",
+//           designation: "",
+//           mobile: "",
+//           email: "",
+//         },
+//       },
+//       SA: {
+//         securityAudit: (project.SA?.securityAudit || []).map((audit) => ({
+//           ...audit,
+//           auditDate: audit.auditDate
+//             ? audit.auditDate instanceof Date
+//               ? audit.auditDate.toISOString()
+//               : audit.auditDate?.$date || audit.auditDate || ""
+//             : "",
+//           expireDate: audit.expireDate
+//             ? audit.expireDate instanceof Date
+//               ? audit.expireDate.toISOString()
+//               : audit.expireDate?.$date || audit.expireDate || ""
+//             : "",
+//         })),
+//       },
+//       Infra: {
+//         typeOfServer: project.Infra?.typeOfServer || "",
+//         location: project.Infra?.location || "",
+//         antivirus: project.Infra?.antivirus || "",
+//         deployment: project.Infra?.deployment || "",
+//         dataCentre: project.Infra?.dataCentre || "",
+//         gitUrls: project.Infra?.gitUrls || [],
+//         vaRecords: infraVaRecords,
+//         additionalInfra: project.Infra?.additionalInfra || [],
+//       },
+//       TS: {
+//         frontend: project.TS?.frontend || [],
+//         framework: project.TS?.framework || [],
+//         database: project.TS?.database || [],
+//         os: project.TS?.os || [],
+//         osVersion: project.TS?.osVersion || [],
+//         repoUrls: project.TS?.repoUrls || [],
+//       },
+//       TLS: {
+//         tlsInfo,
+//       },
+//       DR: {
+//         location: project.DR?.location || project.DR?.location || "",
+//         antivirus: project.DR?.antivirus || "",
+//         // drStatus: project.DR?.drStatus || "",
+//         // lastDrTestDate: project.DR?.lastDrTestDate
+//         //   ? (project.DR.lastDrTestDate instanceof Date
+//         //       ? project.DR.lastDrTestDate.toISOString()
+//         //       : project.DR.lastDrTestDate?.$date || project.DR.lastDrTestDate || "")
+//         //   : "",
+//         // remarks: project.DR?.remarks || "",
+//         serverType: project.DR?.serverType || "",
+//         dataCentre: project.DR?.dataCentre || "",
+//         deployment: project.DR?.deployment || "",
+//         gitUrls: project.DR?.gitUrls || [],
+//         vaRecords: drVaRecords,
+//       },
+//       createdAt: project.createdAt
+//         ? project.createdAt instanceof Date
+//           ? project.createdAt.toISOString()
+//           : project.createdAt?.$date || project.createdAt || ""
+//         : "",
+//     };
+
+//     res.status(200).json(response);
+//   } catch (error) {
+//     console.error("Error in getProjectDetailsByName:", error);
+//     res.status(500).json({
+//       error: "Failed to fetch project details",
+//       details: error.message,
+//     });
+//   }
+// }
+
 async function getProjectDetailsByName(req, res) {
   try {
     const db = getDb();
     const { projectName } = req.params;
+    console.log(`[INFO] Fetching project details for: ${projectName}`);
 
     if (!projectName) {
+      console.warn("[WARN] Project name not provided in request");
       return res.status(400).json({ error: "Project name is required" });
     }
 
@@ -436,10 +592,11 @@ async function getProjectDetailsByName(req, res) {
     );
 
     if (!project) {
+      console.warn(`[WARN] Project not found: ${projectName}`);
       return res.status(404).json({ error: "Project not found" });
     }
 
-    // Format TLS Info
+    console.log("[INFO] Project found, formatting TLS info");
     const tlsInfo = (project.TLS?.tlsInfo || []).map((record) => ({
       domainName: record.domainName || "",
       certProvider: record.certProvider || "",
@@ -453,12 +610,12 @@ async function getProjectDetailsByName(req, res) {
           ? record.expiryDate.toISOString()
           : record.expiryDate?.$date || record.expiryDate || ""
         : "",
-      certStatus: record.certStatus || "",
+      tlsStatus: record.tlsStatus || "",
       score: record.score || "",
       procuredFrom: record.procuredFrom || "",
     }));
 
-    // Format DR VA Records
+    console.log("[INFO] Formatting DR VA records");
     const drVaRecords = (project.DR?.vaRecords || []).map((record) => ({
       ipAddress: record.ipAddress || "",
       dbServerIp: record.dbServerIp || "",
@@ -479,12 +636,11 @@ async function getProjectDetailsByName(req, res) {
           : record.vaReport?.filename || "",
     }));
 
-    // Format Infra VA Records
+    console.log("[INFO] Formatting Infra VA records");
     const infraVaRecords = (project.Infra?.vaRecords || []).map((record) => ({
       ipAddress: record.ipAddress || "",
       dbServer: record.dbServer || "",
       purposeOfUse: record.purposeOfUse || "",
-
       vaScore: record.vaScore || "",
       dateOfVA: record.dateOfVA
         ? record.dateOfVA instanceof Date
@@ -497,6 +653,7 @@ async function getProjectDetailsByName(req, res) {
           : record.vaReport?.filename || "",
     }));
 
+    console.log("[INFO] Building response object");
     const response = {
       assetsId: project.assetsId || "",
       projectName: project.projectName || project.BP?.name || "",
@@ -553,19 +710,10 @@ async function getProjectDetailsByName(req, res) {
         osVersion: project.TS?.osVersion || [],
         repoUrls: project.TS?.repoUrls || [],
       },
-      TLS: {
-        tlsInfo,
-      },
+      TLS: { tlsInfo },
       DR: {
-        location: project.DR?.location || project.DR?.location || "",
+        location: project.DR?.location || "",
         antivirus: project.DR?.antivirus || "",
-        // drStatus: project.DR?.drStatus || "",
-        // lastDrTestDate: project.DR?.lastDrTestDate
-        //   ? (project.DR.lastDrTestDate instanceof Date
-        //       ? project.DR.lastDrTestDate.toISOString()
-        //       : project.DR.lastDrTestDate?.$date || project.DR.lastDrTestDate || "")
-        //   : "",
-        // remarks: project.DR?.remarks || "",
         serverType: project.DR?.serverType || "",
         dataCentre: project.DR?.dataCentre || "",
         deployment: project.DR?.deployment || "",
@@ -579,15 +727,17 @@ async function getProjectDetailsByName(req, res) {
         : "",
     };
 
+    console.log("[INFO] Sending response");
     res.status(200).json(response);
   } catch (error) {
-    console.error("Error in getProjectDetailsByName:", error);
+    console.error("[ERROR] Error in getProjectDetailsByName:", error);
     res.status(500).json({
       error: "Failed to fetch project details",
       details: error.message,
     });
   }
 }
+
 
 async function getDashboardByType(req, res) {
   try {
@@ -618,74 +768,141 @@ async function getDashboardByType(req, res) {
         .json({ error: "Unauthorized: Invalid employeeId or employeeType" });
     }
 
-    const pipeline = [
-      // Match documents based on role
-      { $match: matchStage },
+    // const pipeline = [
+    //   // Match documents based on role
+    //   { $match: matchStage },
 
-      // Unwind each securityAudit entry into a flat document
-      {
-        $unwind: {
-          path: "$SA.securityAudit",
-          preserveNullAndEmptyArrays: false,
-        },
+    //   // Unwind each securityAudit entry into a flat document
+    //   {
+    //     $unwind: {
+    //       path: "$SA.securityAudit",
+    //       preserveNullAndEmptyArrays: false,
+    //     },
+    //   },
+
+    //   // Project necessary fields, include both dates
+    //   {
+    //     $project: {
+    //       _id: 0,
+    //       assetsId: 1,
+    //       projectName: "$BP.name",
+    //       prismId: "$BP.prismId",
+    //       deptName: "$BP.deptName",
+    //       HOD: "$BP.HOD",
+    //       employeeId: "$BP.employeeId",
+    //       auditDate: "$SA.securityAudit.auditDate",
+    //       expireDate: "$SA.securityAudit.expireDate",
+    //       tlsNextExpiry: "$TLS.tlsInfo.expiryDate",
+    //       sslLabScore: "$SA.securityAudit.sslLabScore",
+    //       certificate: "$SA.securityAudit.certificate",
+    //       auditStatus: "$SA.securityAudit.auditStatus",
+    //       tlsStatus:  "$TLS.tlsInfo.tlsStatus",
+    //       dataCentre: "$Infra.dataCentre",
+    //       createdAt: 1,
+    //     },
+    //   },
+
+    //   // Sort audits so the most recent audit appears first
+    //   {
+    //     $sort: {
+    //       assetsId: 1,
+    //       auditDate: -1,
+    //       expireDate: -1, // tie-breaker if auditDate is same
+    //     },
+    //   },
+
+    //   // Group by asset, keeping the first (latest) audit
+    //   {
+    //     $group: {
+    //       _id: "$assetsId",
+    //       assetsId: { $first: "$assetsId" },
+    //       projectName: { $first: "$projectName" },
+    //       prismId: { $first: "$prismId" },
+    //       deptName: { $first: "$deptName" },
+    //       HOD: { $first: "$HOD" },
+    //       employeeId: { $first: "$employeeId" },
+    //       auditDate: { $first: "$auditDate" },
+    //       expireDate: { $first: "$expireDate" },
+    //       tlsNextExpiry: { $first: "$tlsNextExpiry" },
+    //       sslLabScore: { $first: "$sslLabScore" },
+    //       certificate: { $first: "$certificate" },
+    //       auditStatus: { $first: "$auditStatus" },
+    //       tlsStatus: { $first: "$tlsStatus" },
+    //       dataCentre: { $first: "$dataCentre" },
+    //       createdAt: { $first: "$createdAt" },
+    //     },
+    //   },
+
+    //   // Optional: Sort final output by expiry if desired
+    //   { $sort: { expireDate: -1 } },
+    // ];
+
+  const pipeline = [
+  // Match documents according to role/criteria
+  { $match: matchStage },
+
+  // Project relevant fields and keep only the latest securityAudit and TLS info
+  {
+    $project: {
+      _id: 0,
+      assetsId: 1,
+      projectName: "$BP.name",
+      prismId: "$BP.prismId",
+      deptName: "$BP.deptName",
+      HOD: "$BP.HOD",
+      employeeId: "$BP.employeeId",
+      // Latest security audit
+      securityAudits: {
+        $slice: [
+          {
+            $reverseArray: {
+              $sortArray: { input: "$SA.securityAudit", sortBy: { auditDate: 1 } },
+            },
+          },
+          1,
+        ],
       },
-
-      // Project necessary fields, include both dates
-      {
-        $project: {
-          _id: 0,
-          assetsId: 1,
-          projectName: "$BP.name",
-          prismId: "$BP.prismId",
-          deptName: "$BP.deptName",
-          HOD: "$BP.HOD",
-          employeeId: "$BP.employeeId",
-          auditDate: "$SA.securityAudit.auditDate",
-          expireDate: "$SA.securityAudit.expireDate",
-          tlsNextExpiry: "$TLS.tlsInfo.expiryDate",
-          sslLabScore: "$SA.securityAudit.sslLabScore",
-          certificate: "$SA.securityAudit.certificate",
-          auditStatus: "$SA.securityAudit.auditStatus",
-          sslStatus: "$SA.securityAudit.sslStatus",
-          dataCentre: "$Infra.dataCentre",
-          createdAt: 1,
-        },
+      // Latest TLS info
+      TLS: {
+        $slice: [
+          {
+            $reverseArray: {
+              $sortArray: { input: "$TLS.tlsInfo", sortBy: { expiryDate: 1 } },
+            },
+          },
+          1,
+        ],
       },
+      dataCentre: "$Infra.dataCentre",
+      createdAt: 1,
+    },
+  },
 
-      // Sort audits so the most recent audit appears first
-      {
-        $sort: {
-          assetsId: 1,
-          auditDate: -1,
-          expireDate: -1, // tie-breaker if auditDate is same
-        },
-      },
+  // Flatten arrays to get scalar fields for latest audit and TLS
+  {
+    $project: {
+      assetsId: 1,
+      projectName: 1,
+      prismId: 1,
+      deptName: 1,
+      HOD: 1,
+      employeeId: 1,
+      auditDate: { $arrayElemAt: ["$securityAudits.auditDate", 0] },
+      expireDate: { $arrayElemAt: ["$securityAudits.expireDate", 0] },
+      certificate: { $arrayElemAt: ["$securityAudits.certificate", 0] },
+      auditStatus: { $arrayElemAt: ["$securityAudits.auditStatus", 0] },
+      sslLabScore: { $arrayElemAt: ["$securityAudits.sslLabScore", 0] },
+      tlsNextExpiry: { $arrayElemAt: ["$TLS.expiryDate", 0] },
+      tlsStatus: { $arrayElemAt: ["$TLS.tlsStatus", 0] },
+      dataCentre: 1,
+      createdAt: 1,
+    },
+  },
 
-      // Group by asset, keeping the first (latest) audit
-      {
-        $group: {
-          _id: "$assetsId",
-          assetsId: { $first: "$assetsId" },
-          projectName: { $first: "$projectName" },
-          prismId: { $first: "$prismId" },
-          deptName: { $first: "$deptName" },
-          HOD: { $first: "$HOD" },
-          employeeId: { $first: "$employeeId" },
-          auditDate: { $first: "$auditDate" },
-          expireDate: { $first: "$expireDate" },
-          tlsNextExpiry: { $first: "$tlsNextExpiry" },
-          sslLabScore: { $first: "$sslLabScore" },
-          certificate: { $first: "$certificate" },
-          auditStatus: { $first: "$auditStatus" },
-          sslStatus: { $first: "$sslStatus" },
-          dataCentre: { $first: "$dataCentre" },
-          createdAt: { $first: "$createdAt" },
-        },
-      },
+  // Optional: sort by expireDate descending
+  { $sort: { expireDate: -1 } },
+];
 
-      // Optional: Sort final output by expiry if desired
-      { $sort: { expireDate: -1 } },
-    ];
 
     const dashboardData = await db
       .collection("Assets")
@@ -701,16 +918,11 @@ async function getDashboardByType(req, res) {
   }
 }
 
+
+
 // async function updateAssetByProjectName(req, res) {
 //   try {
 //     const { projectName } = req.params;
-//     console.log("🔍 Project Name Received:", projectName);
-
-//     if (!projectName) {
-//       return res.status(400).json({ error: "Project name is required" });
-//     }
-
-//     // Parse incoming fields
 //     const BP = JSON.parse(req.body.BP);
 //     const SA = JSON.parse(req.body.SA);
 //     const TS = JSON.parse(req.body.TS);
@@ -718,41 +930,17 @@ async function getDashboardByType(req, res) {
 //     const TLS = JSON.parse(req.body.TLS);
 //     const DR = JSON.parse(req.body.DR);
 
-//     console.log("📦 Parsed BP:", BP);
-//     console.log("📦 Parsed SA (before array check):", SA);
-//     console.log("📦 Parsed TS:", TS);
-//     console.log("📦 Parsed Infra:", Infra);
-//     console.log("📦 Parsed TLS:", TLS);
-//     console.log("📦 Parsed DR:", DR);
-
-//     // Ensure SA.securityAudit is an array
 //     if (SA && SA.securityAudit && !Array.isArray(SA.securityAudit)) {
 //       SA.securityAudit = [SA.securityAudit];
-//       console.log("✅ Converted SA.securityAudit to array");
 //     }
 
-//     // Handle certificate file upload
 //     if (req.file && SA.securityAudit?.length > 0) {
 //       SA.securityAudit[0].certificate = req.file.originalname;
-//       console.log(
-//         "📎 Uploaded file attached to securityAudit[0]:",
-//         req.file.originalname
-//       );
 //     }
 
 //     const db = getDb();
 
-//     // Log final update object
-//     console.log("📤 Final Update Payload:", {
-//       BP,
-//       SA,
-//       TS,
-//       Infra,
-//       TLS: { tlsInfo: TLS.tlsInfo || [] },
-//       DR: DR || {},
-//     });
-
-//     // Update document in DB
+//     // Update document AND set updatedByPM: true
 //     const result = await db.collection("Assets").updateOne(
 //       { "BP.name": { $regex: new RegExp(`^${projectName}$`, "i") } },
 //       {
@@ -761,20 +949,15 @@ async function getDashboardByType(req, res) {
 //           SA,
 //           TS,
 //           Infra,
-//           TLS: {
-//             tlsInfo: TLS.tlsInfo || [],
-//           },
+//           TLS: { tlsInfo: TLS.tlsInfo || [] },
 //           DR: DR || {},
+//           updatedByPM: true, // ✅ mark as updated
 //         },
 //       }
 //     );
 
-//     console.log("📊 Update Result:", result);
-
 //     if (result.matchedCount === 0) {
-//       return res
-//         .status(404)
-//         .json({ error: "Asset not found for this project name" });
+//       return res.status(404).json({ error: "Asset not found" });
 //     }
 
 //     res.status(200).json({
@@ -782,7 +965,7 @@ async function getDashboardByType(req, res) {
 //       modifiedCount: result.modifiedCount,
 //     });
 //   } catch (err) {
-//     console.error("❌ Error in updateAssetByProjectName:", err);
+//     console.error(err);
 //     res
 //       .status(500)
 //       .json({ error: "Error updating asset", details: err.message });
@@ -790,28 +973,56 @@ async function getDashboardByType(req, res) {
 // }
 
 
-
 async function updateAssetByProjectName(req, res) {
   try {
     const { projectName } = req.params;
-    const BP = JSON.parse(req.body.BP);
-    const SA = JSON.parse(req.body.SA);
-    const TS = JSON.parse(req.body.TS);
-    const Infra = JSON.parse(req.body.Infra);
-    const TLS = JSON.parse(req.body.TLS);
-    const DR = JSON.parse(req.body.DR);
+    console.log(`[INFO] Starting update for project: ${projectName}`);
 
+    // Parse request body
+    const BP = JSON.parse(req.body.BP || "{}");
+    const SA = JSON.parse(req.body.SA || "{}");
+    const TS = JSON.parse(req.body.TS || "{}");
+    const Infra = JSON.parse(req.body.Infra || "{}");
+    const TLS = JSON.parse(req.body.TLS || "{}");
+    const DR = JSON.parse(req.body.DR || "{}");
+
+    console.log("[DEBUG] Parsed request body:");
+    console.log(JSON.stringify({ BP, SA, TS, Infra, TLS, DR }, null, 2));
+
+    // Ensure securityAudit is an array
     if (SA && SA.securityAudit && !Array.isArray(SA.securityAudit)) {
+      console.log("[INFO] Converting securityAudit to array");
       SA.securityAudit = [SA.securityAudit];
     }
 
+    // Attach uploaded file if exists
     if (req.file && SA.securityAudit?.length > 0) {
+      console.log(`[INFO] Attaching uploaded file ${req.file.originalname} to securityAudit`);
       SA.securityAudit[0].certificate = req.file.originalname;
     }
 
-    const db = getDb();
+    // Recalculate TLS status
+    const updatedTlsInfo = (TLS.tlsInfo || []).map((record, index) => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
-    // Update document AND set updatedByPM: true
+      let tlsStatus = "N/A";
+      if (record.expiryDate) {
+        const expiry = new Date(record.expiryDate);
+        expiry.setHours(0, 0, 0, 0);
+        tlsStatus = expiry >= today ? "Valid" : "Expired";
+      }
+
+      return {
+        ...record,
+        slNo: index + 1,
+        tlsStatus,
+      };
+    });
+
+    const db = getDb();
+    console.log("[INFO] Connected to DB, starting update operation...");
+
     const result = await db.collection("Assets").updateOne(
       { "BP.name": { $regex: new RegExp(`^${projectName}$`, "i") } },
       {
@@ -820,26 +1031,34 @@ async function updateAssetByProjectName(req, res) {
           SA,
           TS,
           Infra,
-          TLS: { tlsInfo: TLS.tlsInfo || [] },
+          TLS: { tlsInfo: updatedTlsInfo },
           DR: DR || {},
-          updatedByPM: true, // ✅ mark as updated
+          updatedByPM: true,
         },
       }
     );
 
+    console.log("[INFO] Update operation result:");
+    console.log(JSON.stringify(result, null, 2));
+
     if (result.matchedCount === 0) {
+      console.warn("[WARN] Asset not found for update");
       return res.status(404).json({ error: "Asset not found" });
     }
 
+    console.log("[INFO] Asset update completed successfully");
     res.status(200).json({
       message: "Asset updated successfully",
       modifiedCount: result.modifiedCount,
     });
   } catch (err) {
-    console.error(err);
+    console.error("[ERROR] Error updating asset:", err);
     res.status(500).json({ error: "Error updating asset", details: err.message });
   }
 }
+
+
+
 
 async function getOs(req, res) {
   try {
@@ -864,56 +1083,104 @@ async function getOs(req, res) {
 async function getFilteredDashboard(matchStage) {
   const db = getDb();
 
+  // const pipeline = [
+  //   { $match: matchStage },
+  //   {
+  //     $project: {
+  //       _id: 0,
+  //       assetsId: 1,
+  //       projectName: "$BP.name",
+  //       prismId: "$BP.prismId",
+  //       deptName: "$BP.deptName",
+  //       HOD: "$BP.HOD",
+  //       employeeId: "$BP.employeeId",
+  //       securityAudits: "$SA.securityAudit",
+  //       dataCentre: "$Infra.dataCentre",
+  //       TLS: 1,
+  //       createdAt: 1,
+  //     },
+  //   },
+  //   {
+  //     $unwind: {
+  //       path: "$securityAudits",
+  //       preserveNullAndEmptyArrays: true,
+  //     },
+  //   },
+  //   {
+  //     $unwind: {
+  //       path: "$TLS.tlsInfo",
+  //       preserveNullAndEmptyArrays: true,
+  //     },
+  //   },
+  //   {
+  //     $project: {
+  //       assetsId: 1,
+  //       projectName: 1,
+  //       prismId: 1,
+  //       deptName: 1,
+  //       HOD: 1,
+  //       employeeId: 1,
+  //       auditDate: "$securityAudits.auditDate",
+  //       expireDate: "$securityAudits.expireDate",
+  //       tlsNextExpiry: "$TLS.tlsInfo.expiryDate", // ✅ fixed
+  //       sslLabScore: "$securityAudits.sslLabScore",
+  //       certificate: "$securityAudits.certificate",
+  //       auditStatus: "$securityAudits.auditStatus",
+  //       tlsStatus: "$TLS.tlsInfo.tlsStatus",
+  //       dataCentre: 1,
+  //       createdAt: 1,
+  //     },
+  //   },
+  //   { $sort: { expireDate: 1 } },
+  // ];
+
+
   const pipeline = [
-    { $match: matchStage },
-    {
-      $project: {
-        _id: 0,
-        assetsId: 1,
-        projectName: "$BP.name",
-        prismId: "$BP.prismId",
-        deptName: "$BP.deptName",
-        HOD: "$BP.HOD",
-        employeeId: "$BP.employeeId",
-        securityAudits: "$SA.securityAudit",
-        dataCentre: "$Infra.dataCentre",
-        TLS: 1,
-        createdAt: 1,
+  { $match: matchStage },
+  {
+    $project: {
+      _id: 0,
+      assetsId: 1,
+      projectName: "$BP.name",
+      prismId: "$BP.prismId",
+      deptName: "$BP.deptName",
+      HOD: "$BP.HOD",
+      employeeId: "$BP.employeeId",
+      securityAudits: {
+        $slice: [
+          { $reverseArray: { $sortArray: { input: "$SA.securityAudit", sortBy: { auditDate: 1 } } } },
+          1
+        ]
       },
-    },
-    {
-      $unwind: {
-        path: "$securityAudits",
-        preserveNullAndEmptyArrays: true,
+      TLS: {
+        $slice: [
+          { $reverseArray: { $sortArray: { input: "$TLS.tlsInfo", sortBy: { expiryDate: 1 } } } },
+          1
+        ]
       },
+      dataCentre: "$Infra.dataCentre",
+      createdAt: 1,
     },
-    {
-      $unwind: {
-        path: "$TLS.tlsInfo",
-        preserveNullAndEmptyArrays: true,
-      },
+  },
+  {
+    $project: {
+      assetsId: 1,
+      projectName: 1,
+      prismId: 1,
+      deptName: 1,
+      HOD: 1,
+      employeeId: 1,
+      auditDate: { $arrayElemAt: ["$securityAudits.auditDate", 0] },
+      expireDate: { $arrayElemAt: ["$securityAudits.expireDate", 0] },
+      tlsNextExpiry: { $arrayElemAt: ["$TLS.expiryDate", 0] },
+      certificate: { $arrayElemAt: ["$securityAudits.certificate", 0] },
+      auditStatus: { $arrayElemAt: ["$securityAudits.auditStatus", 0] },
+      tlsStatus: { $arrayElemAt: ["$TLS.tlsStatus", 0] },
+      dataCentre: 1,
+      createdAt: 1,
     },
-    {
-      $project: {
-        assetsId: 1,
-        projectName: 1,
-        prismId: 1,
-        deptName: 1,
-        HOD: 1,
-        employeeId: 1,
-        auditDate: "$securityAudits.auditDate",
-        expireDate: "$securityAudits.expireDate",
-        tlsNextExpiry: "$TLS.tlsInfo.expiryDate", // ✅ fixed
-        sslLabScore: "$securityAudits.sslLabScore",
-        certificate: "$securityAudits.certificate",
-        auditStatus: "$securityAudits.auditStatus",
-        sslStatus: "$securityAudits.sslStatus",
-        dataCentre: 1,
-        createdAt: 1,
-      },
-    },
-    { $sort: { expireDate: 1 } },
-  ];
+  },
+];
 
   return db.collection("Assets").aggregate(pipeline).toArray();
 }
@@ -1031,31 +1298,31 @@ async function getAllProjectManagers(req, res) {
   }
 }
 
-// async function getProjectAssignData(req, res) {
-//   try {
-//     const db = getDb();
-//     const collection = db.collection("AssignedAssets"); // Update if your collection name differs
+async function getAllHods(req, res) {
+  try {
+    const db = getDb();
 
-//     const { empCode } = req.params;
+    // Fetch only employeeId and PM name (exclude _id)
+    const projectHods = await db
+      .collection("Users")
+      .find(
+        { employeeType: "HOD" },
+        {
+          projection: {
+            employeeId: 1,
+            HOD: 1,
+            _id: 0,
+          },
+        }
+      )
+      .toArray();
 
-//     if (!empCode) {
-//       return res.status(400).json({ message: "empCode is required" });
-//     }
-
-//     const result = await collection.find({ empCode }).toArray();
-
-//     if (result.length === 0) {
-//       return res
-//         .status(404)
-//         .json({ message: "No project data found for the given empCode" });
-//     }
-
-//     res.status(200).json(result);
-//   } catch (err) {
-//     console.error("Error fetching project assignment data:", err);
-//     res.status(500).json({ message: "Internal Server Error" });
-//   }
-// }
+    res.status(200).json({ projectHods });
+  } catch (err) {
+    console.error("Error in getAllProjectManagers:", err);
+    res.status(500).json({ error: "Failed to retrieve project managers" });
+  }
+}
 
 
 
@@ -1078,7 +1345,9 @@ async function getProjectAssignData(req, res) {
     if (result.length === 0) {
       return res
         .status(404)
-        .json({ message: "No pending project data found for the given empCode" });
+        .json({
+          message: "No pending project data found for the given empCode",
+        });
     }
 
     res.status(200).json(result);
@@ -1088,7 +1357,37 @@ async function getProjectAssignData(req, res) {
   }
 }
 
+// Get project assignments for HOD by employeeId
+async function getProjectAssignDataForHOD(req, res) {
+  try {
+    const db = getDb();
+    const collection = db.collection("AssignedAssets");
 
+    const { employeeId } = req.params;
+
+    if (!employeeId) {
+      return res.status(400).json({ message: "employeeId is required" });
+    }
+
+    // Only return projects NOT updated by HOD
+    const result = await collection
+      .find({ employeeId, updatedByHOD: false })
+      .toArray();
+
+    if (result.length === 0) {
+      return res
+        .status(404)
+        .json({
+          message: "No pending project data found for the given employeeId",
+        });
+    }
+
+    res.status(200).json(result);
+  } catch (err) {
+    console.error("Error fetching HOD project assignment data:", err);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+}
 
 const getAuditExpiryForUser = async (req, res) => {
   try {
@@ -1207,49 +1506,6 @@ const getAuditExpiryForUser = async (req, res) => {
   }
 };
 
-// async function getProjectsAssignedToPM(req, res) {
-//   try {
-//     const { empCode } = req.params;
-//     console.log("Received empCode:", empCode); // DEBUG LOG
-
-//     if (!empCode) {
-//       return res.status(400).json({ message: "empCode is required" });
-//     }
-
-//     const db = getDb();
-//     const collection = db.collection("AssignedAssets");
-
-//     // Only return specific fields
-//     const projects = await collection
-//       .find(
-//         { empCode },
-//         {
-//           projection: {
-//             projectName: 1,
-//             deptName: 1,
-//             HOD: 1,
-//             projectManagerName: 1,
-//             empCode: 1,
-//             employeeId: 1,
-//             _id: 0,
-//           },
-//         }
-//       )
-//       .toArray();
-
-//     if (projects.length === 0) {
-//       return res
-//         .status(404)
-//         .json({ message: "No projects found for the given empCode" });
-//     }
-
-//     res.status(200).json(projects);
-//   } catch (err) {
-//     console.error("Error fetching PM projects:", err);
-//     res.status(500).json({ message: "Internal Server Error" });
-//   }
-// }
-
 async function getProjectsAssignedToPM(req, res) {
   try {
     const { empCode } = req.params;
@@ -1293,7 +1549,6 @@ async function getProjectsAssignedToPM(req, res) {
   }
 }
 
-
 async function getDatabaseList(req, res) {
   try {
     const db = getDb();
@@ -1314,8 +1569,6 @@ async function getDatabaseList(req, res) {
     res.status(500).json({ message: "Internal Server Error" });
   }
 }
-
-
 
 async function filterByDataCenter(req, res) {
   try {
@@ -1355,31 +1608,6 @@ async function filterByDataCenter(req, res) {
   }
 }
 
-// async function filterByPrismId(req, res) {
-//   try {
-//     const { prismId, employeeId } = req.params;
-
-//     if (!prismId || !employeeId) {
-//       return res.status(400).json({ error: "Prism ID and Employee ID are required." });
-//     }
-
-//     const matchStage = {
-//       "BP.prismId": prismId.trim(),
-//       "BP.employeeId": employeeId.trim()
-//     };
-
-//     const data = await getFilteredDashboard(matchStage);
-
-//     if (!data.length) {
-//       return res.status(404).json({ error: "No assets found for this Prism ID and employee." });
-//     }
-
-//     res.status(200).json(data);
-//   } catch (error) {
-//     console.error("filterByPrismId error:", error);
-//     res.status(500).json({ error: "Internal Server Error", details: error.message });
-//   }
-// }
 
 async function filterByPrismId(req, res) {
   try {
@@ -1424,12 +1652,9 @@ async function filterByDepartment(req, res) {
     const { deptName, employeeId, employeeType } = req.params;
 
     if (!deptName || !employeeId || !employeeType) {
-      return res
-        .status(400)
-        .json({
-          error:
-            "Department name, Employee ID, and Employee Type are required.",
-        });
+      return res.status(400).json({
+        error: "Department name, Employee ID, and Employee Type are required.",
+      });
     }
 
     const matchStage = {
@@ -1482,136 +1707,6 @@ async function getFrontend(req, res) {
 }
 
 
-// Mark project as editable (updatedByPM: false) when Edit button clicked
-// async function markProjectForEdit(req, res) {
-//   try {
-//     const { projectName, empCode } = req.body;
-
-//     if (!projectName || !empCode) {
-//       return res.status(400).json({ message: "projectName and empCode are required" });
-//     }
-
-//     const db = getDb();
-//     const result = await db.collection("AssignedAssets").updateOne(
-//       { projectName: projectName, empCode: empCode }, // exact match
-//       { $set: { updatedByPM: false } }
-//     );
-
-//     if (result.matchedCount === 0) {
-//       return res.status(404).json({ message: "Project not found or already updated" });
-//     }
-
-//     res.status(200).json({ message: "Project marked for edit (updatedByPM=false)" });
-//   } catch (err) {
-//     console.error("Error in markProjectForEdit:", err);
-//     res.status(500).json({ message: "Internal Server Error", details: err.message });
-//   }
-// }
-
-
-// async function updateProjectStatus(req, res) {
-//   try {
-//     const { projectName, empCode } = req.body;
-//     console.log("[INFO] Payload:", { projectName, empCode });
-
-//     const db = getDb();
-//     const result = await db.collection("AssignedAssets").updateOne(
-//   { projectName: projectName, empCode: empCode },
-//   { $set: { updatedByPM: true, updatedAt: new Date() } }
-// );
-
-//     console.log("[INFO] MongoDB update result:", result);
-
-//     if (result.matchedCount === 0) {
-//       return res.status(404).json({ message: "Project not found or empCode mismatch" });
-//     }
-
-//     res.status(200).json({ message: "Project status updated successfully" });
-//   } catch (err) {
-//     console.error("[ERROR] Error updating project status:", err);
-//     res.status(500).json({ message: err.message });
-//   }
-// }
-
-
-
-
-
-// async function markProjectForEdit(req, res) {
-//   try {
-//     const { projectName, empCode, employeeId } = req.body;
-
-//     if (!projectName || (!empCode && !employeeId)) {
-//       return res.status(400).json({ message: "projectName and empCode/employeeId are required" });
-//     }
-
-//     const db = getDb();
-
-//     // Decide which field to match & update based on payload
-//     let filter = { projectName };
-//     let update = {};
-
-//     if (empCode) {
-//       // PM case
-//       filter.empCode = empCode;
-//       update.updatedByPM = false;
-//     } else if (employeeId) {
-//       // HOD/Admin case
-//       filter.employeeId = employeeId;
-//       update.updatedByHOD = false;
-//     }
-
-//     const result = await db.collection("AssignedAssets").updateOne(
-//       filter,
-//       { $set: update }
-//     );
-
-//     if (result.matchedCount === 0) {
-//       return res.status(404).json({ message: "Project not found or mismatch" });
-//     }
-
-//     res.status(200).json({ message: "Project marked for edit successfully" });
-//   } catch (err) {
-//     console.error("Error in markProjectForEdit:", err);
-//     res.status(500).json({ message: "Internal Server Error", details: err.message });
-//   }
-// }
-
-// async function markProjectForEdit(req, res) {
-//   try {
-//     const { projectName, empCode, employeeId } = req.body;
-
-//     if (!projectName || (!empCode && !employeeId)) {
-//       return res.status(400).json({ message: "projectName and empCode or employeeId are required" });
-//     }
-
-//     const db = getDb();
-
-//     // Build filter based on provided identifiers
-//     let filter = { projectName };
-//     let updateFields = {};
-
-//     if (empCode) {
-//       filter.empCode = empCode;
-//       updateFields.updatedByPM = false;
-//     }
-//     if (employeeId) {
-//       filter.employeeId = employeeId;
-//       updateFields.updatedByHOD = false;
-//     }
-
-//     const result = await db.collection("AssignedAssets").updateOne(filter, { $set: updateFields });
-
-//     if (result.matchedCount === 0) {
-//       return res.status(404).json({ message: "Project not found or mismatch" });
-//     }
-
-//     res.status(200).json({ message: "Project marked for edit successfully" });
-//   } catch (err) {
-//     console.error("Error in markProjectForEdit:", err);
-//     res.status(500).json({ message: "Internal Server Error", details: err.message });
-//   }
-// }
 
 
 async function markProjectForEdit(req, res) {
@@ -1619,33 +1714,23 @@ async function markProjectForEdit(req, res) {
     const { projectName, empCode, employeeId, adminId } = req.body;
 
     if (!projectName || (!empCode && !employeeId && !adminId)) {
-      return res.status(400).json({ message: "projectName and empCode or employeeId or adminId are required" });
+      return res.status(400).json({
+        message: "projectName and at least one identifier (empCode/employeeId/adminId) are required",
+      });
     }
 
     const db = getDb();
+    const filter = { projectName };
+    const updateFields = {};
 
-    // Build filter based on provided identifiers
-    let filter = { projectName };
-    let updateFields = {};
-
-    if (empCode) {
-      filter.empCode = empCode;
-      updateFields.updatedByPM = false;
-    }
-    if (employeeId) {
-      filter.employeeId = employeeId;
-      updateFields.updatedByHOD = false;
-    }
-    if (adminId) {
-      filter.adminId = adminId;
-      updateFields.updatedByAdmin = false;
-    }
+    if (empCode) updateFields.updatedByPM = false, filter.empCode = empCode;
+    if (employeeId) updateFields.updatedByHOD = false, filter.employeeId = employeeId;
+    if (adminId) updateFields.updatedByAdmin = false, filter.adminId = adminId;
 
     const result = await db.collection("AssignedAssets").updateOne(filter, { $set: updateFields });
 
-    if (result.matchedCount === 0) {
-      return res.status(404).json({ message: "Project not found or mismatch" });
-    }
+    if (result.matchedCount === 0)
+      return res.status(404).json({ message: "Project not found or identifier mismatch" });
 
     res.status(200).json({ message: "Project marked for edit successfully" });
   } catch (err) {
@@ -1654,122 +1739,75 @@ async function markProjectForEdit(req, res) {
   }
 }
 
+
+
 // async function updateProjectStatus(req, res) {
 //   try {
-//     const { projectName, empCode, employeeId } = req.body;
+//     const { projectName, empCode, employeeId, bpName, userType } = req.body;
 
-//     if (!projectName || (!empCode && !employeeId)) {
-//       return res.status(400).json({ message: "projectName and empCode/employeeId are required" });
+//     if (!projectName) {
+//       return res.status(400).json({ message: "projectName is required" });
 //     }
-
-//     const db = getDb();
 
 //     let filter = { projectName };
-//     let update = { updatedAt: new Date() };
 
-//     if (empCode) {
-//       filter.empCode = empCode;
-//       update.updatedByPM = true;
-//     } else if (employeeId) {
+//     if (userType === "HOD") {
 //       filter.employeeId = employeeId;
-//       update.updatedByHOD = true;
-//     }
-
-//     const result = await db.collection("AssignedAssets").updateOne(filter, { $set: update });
-
-//     if (result.matchedCount === 0) {
-//       return res.status(404).json({ message: "Project not found or mismatch" });
-//     }
-
-//     res.status(200).json({ message: "Project status updated successfully" });
-//   } catch (err) {
-//     console.error("Error updating project status:", err);
-//     res.status(500).json({ message: "Internal Server Error", details: err.message });
-//   }
-// }
-
-// async function updateProjectStatus(req, res) {
-//   try {
-//     const { projectName, empCode, employeeId } = req.body;
-
-//     if (!projectName || (!empCode && !employeeId)) {
-//       return res.status(400).json({ message: "projectName and empCode or employeeId are required" });
+//       filter.empCode = empCode;
+//       filter.bpName = bpName;
+//     } else if (userType === "PM") {
+//       filter.employeeId = employeeId;
+//       filter.empCode = empCode;
+//     } else if (userType === "Admin") {
+//       // ✅ Admin directly submits — no empCode / employeeId needed
+//       filter = { projectName };
 //     }
 
 //     const db = getDb();
+//     const result = await db.collection("projects").updateOne(filter, {
+//       $set: { status: "updated" }, // or your required fields
+//     });
 
-//     // Build filter based on provided identifiers
-//     const filter = { projectName };
-//     const updateFields = { updatedAt: new Date() };
-
-//     if (empCode) {
-//       filter.empCode = empCode;
-//       updateFields.updatedByPM = true;
-//     }
-//     if (employeeId) {
-//       filter.employeeId = employeeId;
-//       updateFields.updatedByHOD = true;
-//     }
-
-//     const result = await db.collection("AssignedAssets").updateOne(filter, { $set: updateFields });
-
-//     if (result.matchedCount === 0) {
-//       return res.status(404).json({ message: "Project not found or mismatch" });
-//     }
-
-//     res.status(200).json({ message: "Project status updated successfully" });
+//     res.json({ success: true, result });
 //   } catch (err) {
-//     console.error("Error updating project status:", err);
-//     res.status(500).json({ message: "Internal Server Error", details: err.message });
+//     console.error(err);
+//     res.status(500).json({ message: "Server error" });
 //   }
 // }
-
-
-
 
 async function updateProjectStatus(req, res) {
   try {
-    const { projectName, empCode, employeeId, adminId } = req.body;
+    const { projectName, empCode, employeeId, userType } = req.body;
+    if (!projectName) return res.status(400).json({ message: "projectName is required" });
 
-    if (!projectName || (!empCode && !employeeId && !adminId)) {
-      return res.status(400).json({ message: "projectName and empCode or employeeId or adminId are required" });
-    }
-
+    const role = userType || (empCode ? "PM" : employeeId ? "HOD" : "Admin");
     const db = getDb();
-
-    // Build filter based on provided identifiers
     const filter = { projectName };
-    const updateFields = { updatedAt: new Date() };
+    const set = { updatedAt: new Date() };
 
-    if (empCode) {
-      filter.empCode = empCode;
-      updateFields.updatedByPM = true;
-    }
-    if (employeeId) {
-      filter.employeeId = employeeId;
-      updateFields.updatedByHOD = true;
-    }
-    if (adminId) {
-      filter.adminId = adminId;
-      updateFields.updatedByAdmin = true;
-    }
+    if (role === "PM") { filter.empCode = empCode; set.updatedByPM = true; }
+    else if (role === "HOD") { filter.employeeId = employeeId; set.updatedByHOD = true; }
+    else if (role === "Admin") { set.updatedByAdmin = true; }
 
-    const result = await db.collection("AssignedAssets").updateOne(filter, { $set: updateFields });
+    const result = await db.collection("AssignedAssets").updateOne(filter, { $set: set });
+    if (result.matchedCount === 0)
+      return res.status(404).json({ message: "Project not found or identifier mismatch" });
 
-    if (result.matchedCount === 0) {
-      return res.status(404).json({ message: "Project not found or mismatch" });
-    }
-
-    res.status(200).json({ message: "Project status updated successfully" });
+    res.json({ success: true, message: "Project status updated successfully" });
   } catch (err) {
-    console.error("Error updating project status:", err);
-    res.status(500).json({ message: "Internal Server Error", details: err.message });
+    console.error("Error in updateProjectStatus:", err);
+    res.status(500).json({ message: "Server error", details: err.message });
   }
 }
+
+
+
 
 async function getDepartments(req, res) {
   try {
     const db = getDb();
+    console.log(req.body);
+    
     const departments = await db.collection("departments").find({}).toArray();
     res.status(200).json(departments);
   } catch (err) {
@@ -1813,5 +1851,7 @@ module.exports = {
   getFrontend,
   markProjectForEdit,
   updateProjectStatus,
-  getDepartments
+  getDepartments,
+  getProjectAssignDataForHOD,
+  getAllHods
 };
