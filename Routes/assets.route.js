@@ -165,6 +165,8 @@ router.get("/getDepartments", AssetsController.getDepartments);
 router.put("/project/update-status", AssetsController.updateProjectStatus);
 
 router.get("/project-assignments/hod/:employeeId", AssetsController.getProjectAssignDataForHOD);
+
+router.get("/getallprojectstatus", AssetsController.getProjectStats);
 module.exports = router;
 
 
