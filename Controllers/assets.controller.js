@@ -1816,6 +1816,89 @@ async function getDepartments(req, res) {
   }
 }
 
+
+
+// async function getProjectStats(req, res) {
+//   try {
+//     const db = getDb();
+
+//     // 1️⃣ Get all assets
+//     const assets = await db.collection('Assets').find({}).toArray();
+    
+//     // 2️⃣ Total assets
+//     const totalAssets = assets.length;
+
+//     // 3️⃣ Treat each asset as an active project
+//     const totalProjects = totalAssets;
+//     const activeProjects = totalAssets;
+
+//     // 4️⃣ Active projects per asset
+//     const activeProjectsPerAsset = assets.map(asset => ({
+//       assetsId: asset.assetsId,
+//       activeProjectCount: 1 // since each asset has exactly one active project
+//     }));
+
+//     res.json({
+//       totalProjects,
+//       activeProjects,
+//       totalAssets,
+//       activeProjectsPerAsset
+//     });
+
+//   } catch (error) {
+//     console.error("Error fetching project stats:", error);
+//     res.status(500).json({ message: "Internal Server Error", error });
+//   }
+// }
+
+async function getProjectStats(req, res) {
+  try {
+    const db = getDb();
+
+    // 1️⃣ Get all assets
+    const assets = await db.collection("Assets").find({}).toArray();
+
+    // 2️⃣ Total assets
+    const totalAssets = assets.length;
+
+    // 3️⃣ Treat each asset as a project
+    const totalProjects = totalAssets;
+    const activeProjects = totalAssets;
+
+    // 4️⃣ Active projects per asset (same as before)
+    const activeProjectsPerAsset = assets.map(asset => ({
+      assetsId: asset.assetsId,
+      activeProjectCount: 1,
+    }));
+
+    // 5️⃣ Department-wise project counts
+    const deptMap = {};
+    assets.forEach(asset => {
+      const dept = asset.BP?.deptName || "Unknown";
+      deptMap[dept] = (deptMap[dept] || 0) + 1;
+    });
+
+    const activeProjectsPerDept = Object.entries(deptMap).map(
+      ([deptName, count]) => ({
+        deptName,
+        projectCount: count,
+      })
+    );
+
+    res.json({
+      totalProjects,
+      activeProjects,
+      totalAssets,
+      activeProjectsPerAsset,
+      activeProjectsPerDept, // ✅ send this for charts
+    });
+  } catch (error) {
+    console.error("Error fetching project stats:", error);
+    res.status(500).json({ message: "Internal Server Error", error });
+  }
+}
+
+
 module.exports = {
   createAsset,
   getAsset,
@@ -1853,5 +1936,6 @@ module.exports = {
   updateProjectStatus,
   getDepartments,
   getProjectAssignDataForHOD,
-  getAllHods
+  getAllHods,
+  getProjectStats
 };
