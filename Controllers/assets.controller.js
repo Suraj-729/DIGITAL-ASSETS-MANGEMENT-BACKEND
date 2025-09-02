@@ -1438,7 +1438,7 @@ const getAuditExpiryForUser = async (req, res) => {
               assetId,
               message: `Security Audit expired for asset ${assetId} on ${auditExpireDate.toDateString()}`,
             });
-          } else if (daysLeft <= 7) {
+          } else if (daysLeft <= 30) {
             messages.push({
               type: "Security Audit",
               status: "Expiring Soon",
@@ -1469,7 +1469,7 @@ const getAuditExpiryForUser = async (req, res) => {
               assetId,
               message: `TLS Certificate expired for asset ${assetId} on ${tlsExpireDate.toDateString()}`,
             });
-          } else if (daysLeftTLS <= 7) {
+          } else if (daysLeftTLS <= 30) {
             messages.push({
               type: "TLS Certificate",
               status: "Expiring Soon",
@@ -1574,9 +1574,9 @@ async function filterByDataCenter(req, res) {
   try {
     const { dataCenter, employeeId, employeeType } = req.params;
 
-    if (!dataCenter || !employeeId || !employeeType) {
+    if (!dataCenter || !employeeType) {
       return res.status(400).json({
-        error: "Data center name, Employee ID, and Employee Type are required.",
+        error: "Data center name and Employee Type are required.",
       });
     }
 
@@ -1586,9 +1586,10 @@ async function filterByDataCenter(req, res) {
 
     if (employeeType === "PM") {
       matchStage["BP.nodalOfficerNIC.empCode"] = employeeId.trim();
-    } else {
+    } else if (employeeType === "HOD") {
       matchStage["BP.employeeId"] = employeeId.trim();
     }
+    // 👆 Notice: Admin has NO employeeId filter
 
     const data = await getFilteredDashboard(matchStage);
 
@@ -1623,11 +1624,17 @@ async function filterByPrismId(req, res) {
       "BP.prismId": prismId.trim(),
     };
 
+    // if (employeeType === "PM") {
+    //   matchStage["BP.nodalOfficerNIC.empCode"] = employeeId.trim();
+    // } else {
+    //   matchStage["BP.employeeId"] = employeeId.trim();
+    // }
     if (employeeType === "PM") {
       matchStage["BP.nodalOfficerNIC.empCode"] = employeeId.trim();
-    } else {
+    } else if (employeeType === "HOD") {
       matchStage["BP.employeeId"] = employeeId.trim();
     }
+    // 👆 Notice: Admin has NO employeeId filter
 
     const data = await getFilteredDashboard(matchStage);
 
@@ -1661,11 +1668,18 @@ async function filterByDepartment(req, res) {
       "BP.deptName": deptName,
     };
 
+    // if (employeeType === "PM") {
+    //   matchStage["BP.nodalOfficerNIC.empCode"] = employeeId;
+    // } else {
+    //   matchStage["BP.employeeId"] = employeeId;
+    // }
+
     if (employeeType === "PM") {
-      matchStage["BP.nodalOfficerNIC.empCode"] = employeeId;
-    } else {
-      matchStage["BP.employeeId"] = employeeId;
+      matchStage["BP.nodalOfficerNIC.empCode"] = employeeId.trim();
+    } else if (employeeType === "HOD") {
+      matchStage["BP.employeeId"] = employeeId.trim();
     }
+    // 👆 Notice: Admin has NO employeeId filter
 
     const data = await getFilteredDashboard(matchStage);
 
