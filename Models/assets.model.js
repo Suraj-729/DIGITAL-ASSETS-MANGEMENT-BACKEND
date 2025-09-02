@@ -2,7 +2,9 @@ const { getDb } = require("../Db/Db");
 const { ObjectId } = require("mongodb");
 
 const DigitalAssetsModel = {
-   getStatus(expireDate) {
+
+ getStatus(expireDate) {
+
     if (!expireDate) return "N/A";
     return new Date(expireDate) > new Date() ? "Completed" : "Expired";
   },
