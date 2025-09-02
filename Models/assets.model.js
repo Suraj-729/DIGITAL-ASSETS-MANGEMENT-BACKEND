@@ -2,10 +2,11 @@ const { getDb } = require("../Db/Db");
 const { ObjectId } = require("mongodb");
 
 const DigitalAssetsModel = {
-  async getStatus(expireDate) {
+   getStatus(expireDate) {
     if (!expireDate) return "N/A";
-    return new Date(expireDate) > new Date() ? "ACTIVE" : "Expired";
+    return new Date(expireDate) > new Date() ? "Completed" : "Expired";
   },
+
 
   async createAsset(data) {
     const db = getDb();
@@ -82,50 +83,22 @@ const DigitalAssetsModel = {
         },
       },
 
-      // SA: {
-      //   securityAudit:
-      //     data.SA?.securityAudit?.length > 0
-      //       ? data.SA.securityAudit.map((record, index) => ({
-      //           "Sl no": record["Sl no"] || index + 1,
-      //           typeOfAudit: record.typeOfAudit || "N/A",
-      //           auditingAgency: record.auditingAgency || "N/A",
-      //           auditDate: record.auditDate || "",
-      //           expireDate: record.expireDate || "",
-      //           // expireDate: record.expireDate ?? null,
+      
 
-      //           certificate:
-      //             typeof record.certificate === "string"
-      //               ? record.certificate
-      //               : record.certificate?.filename || "N/A",
-      //           auditStatus: getStatus(record.expireDate),
-      //         }))
-      //       : [
-      //           {
-      //             "Sl no": 1,
-      //             typeOfAudit: "N/A",
-      //             auditingAgency: "N/A",
-      //             auditDate: "",
-      //             expireDate: "",
-      //             certificate: "N/A",
-      //             auditStatus: "N/A",
-      //           },
-      //         ],
-      // },
-
-      SA: {
+   SA: {
         securityAudit:
           data.SA?.securityAudit?.length > 0
             ? data.SA.securityAudit.map((record, index) => ({
                 slNo: record.slNo || index + 1,
                 typeOfAudit: record.typeOfAudit || "N/A",
                 auditingAgency: record.auditingAgency || "N/A",
-                auditDate: record.auditDate || null,
-                expireDate: record.expireDate || null,
+                auditDate: record.auditDate || "",
+                expireDate: record.expireDate || "",
                 certificate:
                   typeof record.certificate === "string"
                     ? record.certificate
                     : record.certificate?.filename || "N/A",
-                auditStatus: getStatus(record.expireDate), // force all active
+                auditStatus: DigitalAssetsModel.getStatus(record.expireDate), // force all active
               }))
             : [
                 {
@@ -139,6 +112,7 @@ const DigitalAssetsModel = {
                 },
               ],
       },
+
 
       TLS: {
         tlsInfo:
