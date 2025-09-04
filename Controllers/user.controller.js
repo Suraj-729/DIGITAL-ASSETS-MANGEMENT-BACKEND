@@ -108,9 +108,9 @@ async function login(req, res) {
         employeeId: user.employeeId,
         employeeType: user.employeeType,
         HOD: typeof user.HOD === "string" ? user.HOD : "",
-  PM: typeof user.PM === "string" ? user.PM : "",
-  Admin: typeof user.Admin === "string" ? user.Admin : ""
-}
+        PM: typeof user.PM === "string" ? user.PM : "",
+        Admin: typeof user.Admin === "string" ? user.Admin : ""
+      }      
     });
   } catch (err) {
     console.error('Login error:', {
