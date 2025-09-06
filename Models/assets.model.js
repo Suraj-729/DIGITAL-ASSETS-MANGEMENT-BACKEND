@@ -85,9 +85,10 @@ const DigitalAssetsModel = {
         },
       },
 
-      
 
-   SA: {
+
+      SA: {
+
         securityAudit:
           data.SA?.securityAudit?.length > 0
             ? data.SA.securityAudit.map((record, index) => ({
