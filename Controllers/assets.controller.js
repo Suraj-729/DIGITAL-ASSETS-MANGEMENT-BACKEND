@@ -1149,39 +1149,6 @@ async function getAllHods(req, res) {
   }
 }
 
-async function getProjectAssignData(req, res) {
-  try {
-    const db = getDb();
-    const collection = db.collection("AssignedAssets");
-
-    const { empCode } = req.params;
-
-    if (!empCode) {
-      return res.status(400).json({ message: "empCode is required" });
-    }
-
-    // Only return projects NOT updated by PM
-    const result = await collection
-      .find({ empCode}) //there is part i want to work it
-      .toArray();
-
-    if (result.length === 0) {
-      return res.status(404).json({
-        message: "No pending project data found for the given empCode",
-      });
-    }
-
-    res.status(200).json(result);
-  } catch (err) {
-    console.error("Error fetching project assignment data:", err);
-    res.status(500).json({ message: "Internal Server Error" });
-  }
-}
-
-// Get project assignments for HOD by employeeId
-
-// Generic function for fetching project assignments
-
 async function getProjectAssignDataForHOD(req, res) {
   try {
     const db = getDb();
@@ -1326,6 +1293,41 @@ const getAuditExpiryForUser = async (req, res) => {
   }
 };
 
+async function getProjectAssignData(req, res) {
+  try {
+    const db = getDb();
+    const collection = db.collection("AssignedAssets");
+
+    const { empCode  } = req.params;
+
+    if (!empCode) {
+      return res.status(400).json({ message: "empCode is required" });
+    }
+
+    // Only return projects NOT updated by PM
+    const result = await collection
+      .find({ empCode , updatedByPM:false  }) //there is part i want to work it
+      .toArray();
+
+    if (result.length === 0) {
+      return res.status(404).json({
+        message: "No pending project data found for the given empCode",
+      });
+    }
+
+    res.status(200).json(result);
+  } catch (err) {
+    console.error("Error fetching project assignment data:", err);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
+// Get project assignments for HOD by employeeId
+
+// Generic function for fetching project assignments
+
+
+
 async function getProjectsAssignedToPM(req, res) {
   try {
     const { empCode } = req.params;
@@ -1367,6 +1369,9 @@ async function getProjectsAssignedToPM(req, res) {
     res.status(500).json({ message: "Internal Server Error" });
   }
 }
+
+
+
 
 async function getDatabaseList(req, res) {
   try {
