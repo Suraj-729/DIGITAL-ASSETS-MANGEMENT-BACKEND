@@ -81,26 +81,137 @@ async function deleteUser(req, res) {
  * @param {import('express').Response} res
  * @returns {Promise<void>}
  */
+
+
+// async function login(req, res) {
+//   try {
+//     const { loginId, password } = req.body; // Accept loginId (can be userId or employeeId)
+//     console.log('Login request received for loginId:', loginId);
+
+//     if (!loginId || !password) {
+//       console.log('Missing credentials');
+//       return res.status(400).json({ error: "Login ID and password are required" });
+//     }
+
+//     const user = await UserModel.findByLogin(loginId, password);
+
+//     if (!user) {
+//       console.log('Invalid login attempt for loginId:', loginId);
+//       return res.status(401).json({ error: "Invalid credentials" });
+//     }
+
+//     console.log('User authenticated successfully:', loginId);
+//     req.session.user = { userId: user.userId, employeeId: user.employeeId, employeeType: user.employeeType  };
+//     req.session.createdAt = Date.now(); 
+//     res.status(200).json({ 
+//       message: "Login successful",
+//       user: { 
+//         userId: user.userId,
+//         employeeId: user.employeeId,
+//         employeeType: user.employeeType,
+//         HOD: typeof user.HOD === "string" ? user.HOD : "",
+//         PM: typeof user.PM === "string" ? user.PM : "",
+//         Admin: typeof user.Admin === "string" ? user.Admin : ""
+//       }      
+//     });
+//   } catch (err) {
+//     console.error('Login error:', {
+//       message: err.message,
+//       stack: err.stack,
+//       requestBody: req.body
+//     });
+//     res.status(500).json({ 
+//       error: "Login failed",
+//       details: process.env.NODE_ENV === 'development' ? err.message : undefined
+//     });
+//   }
+// }
+
+
+// async function login(req, res) {
+//   try {
+//     const { loginId, password, employeeType } = req.body; // accept employeeType from dropdown
+//     console.log('Login request received for loginId:', loginId);
+
+//     if (!loginId || !password || !employeeType) {
+//       console.log('Missing credentials or employeeType');
+//       return res.status(400).json({ error: "Login ID, password, and employee type are required" });
+//     }
+
+//     const user = await UserModel.findByLogin(loginId, password);
+
+//     if (!user) {
+//       console.log('Invalid login attempt for loginId:', loginId);
+//       return res.status(401).json({ error: "Invalid credentials" });
+//     }
+
+//     // ✅ Check if employeeType matches
+//     if (user.employeeType !== employeeType) {
+//       console.log(`Employee type mismatch: user=${user.employeeType}, selected=${employeeType}`);
+//       return res.status(403).json({ error: `Selected employee type does not match your account` });
+//     }
+
+//     console.log('User authenticated successfully:', loginId);
+//     req.session.user = { 
+//       userId: user.userId, 
+//       employeeId: user.employeeId, 
+//       employeeType: user.employeeType  
+//     };
+//     req.session.createdAt = Date.now(); 
+
+//     res.status(200).json({ 
+//       message: "Login successful",
+//       user: { 
+//         userId: user.userId,
+//         employeeId: user.employeeId,
+//         employeeType: user.employeeType,
+//         HOD: typeof user.HOD === "string" ? user.HOD : "",
+//         PM: typeof user.PM === "string" ? user.PM : "",
+//         Admin: typeof user.Admin === "string" ? user.Admin : ""
+//       }      
+//     });
+//   } catch (err) {
+//     console.error('Login error:', {
+//       message: err.message,
+//       stack: err.stack,
+//       requestBody: req.body
+//     });
+//     res.status(500).json({ 
+//       error: "Login failed",
+//       details: process.env.NODE_ENV === 'development' ? err.message : undefined
+//     });
+//   }
+// }
+
+
+
 async function login(req, res) {
   try {
-    const { loginId, password } = req.body; // Accept loginId (can be userId or employeeId)
+    const { loginId, password, employeeType } = req.body;
     console.log('Login request received for loginId:', loginId);
 
-    if (!loginId || !password) {
-      console.log('Missing credentials');
-      return res.status(400).json({ error: "Login ID and password are required" });
+    if (!loginId || !password || !employeeType) {
+      console.log('Missing credentials or employeeType');
+      return res.status(400).json({ error: "Login ID, password, and employee type are required" });
     }
 
-    const user = await UserModel.findByLogin(loginId, password);
+    // Pass employeeType to findByLogin
+    const user = await UserModel.findByLogin(loginId, password, employeeType);
 
     if (!user) {
       console.log('Invalid login attempt for loginId:', loginId);
-      return res.status(401).json({ error: "Invalid credentials" });
+      return res.status(401).json({ error: "Invalid credentials or employee type" });
     }
 
+    // Remove the employeeType check since it's already filtered in findByLogin
     console.log('User authenticated successfully:', loginId);
-    req.session.user = { userId: user.userId, employeeId: user.employeeId, employeeType: user.employeeType  };
+    req.session.user = { 
+      userId: user.userId, 
+      employeeId: user.employeeId, 
+      employeeType: user.employeeType  
+    };
     req.session.createdAt = Date.now(); 
+
     res.status(200).json({ 
       message: "Login successful",
       user: { 
@@ -124,7 +235,6 @@ async function login(req, res) {
     });
   }
 }
-
 /**
  * Logs out a user and clears their session.
  * @param {import('express').Request} req
