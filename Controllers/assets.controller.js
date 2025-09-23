@@ -1306,7 +1306,19 @@ async function getProjectAssignData(req, res) {
 
     // Only return projects NOT updated by PM
     const result = await collection
-      .find({ empCode , updatedByPM:false  }) //there is part i want to work it
+      .find({ empCode , updatedByPM:false  },
+        {
+          projection: {
+            projectName: 1,
+            deptName: 1,
+            HOD: 1,
+            projectManagerName: 1,
+            empCode: 1,
+            employeeId: 1,
+            _id: 0,
+          },
+        }
+      )//there is part i want to work it
       .toArray();
 
     if (result.length === 0) {
