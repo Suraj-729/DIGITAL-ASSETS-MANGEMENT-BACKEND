@@ -25,26 +25,26 @@ const UserModel = {
 
 
 
-async findByLogin(identifier, password) {
-  const db = getDb();
-  console.log(`Attempting to find user by userId or employeeId: ${identifier}`);
+// async findByLogin(identifier, password) {
+//   const db = getDb();
+//   console.log(`Attempting to find user by userId or employeeId: ${identifier}`);
 
-  // Try to find by userId or employeeId
-  const user = await db.collection("Users").findOne({
-    $or: [{ userId: identifier }, { employeeId: identifier }]
-  });
+//   // Try to find by userId or employeeId
+//   const user = await db.collection("Users").findOne({
+//     $or: [{ userId: identifier }, { employeeId: identifier }]
+//   });
 
-  if (!user) {
-    console.log(`User not found: ${identifier}`);
-    return null;
-  }
+//   if (!user) {
+//     console.log(`User not found: ${identifier}`);
+//     return null;
+//   }
 
-  console.log(`User found, comparing password for: ${identifier}`);
-  const isMatch = await bcrypt.compare(password, user.password);
-  console.log(`Password match result for ${identifier}: ${isMatch}`);
+//   console.log(`User found, comparing password for: ${identifier}`);
+//   const isMatch = await bcrypt.compare(password, user.password);
+//   console.log(`Password match result for ${identifier}: ${isMatch}`);
 
-  return isMatch ? user : null;
-},
+//   return isMatch ? user : null;
+// },
 
 // async findByLogin(identifier, password) {
 //   const db = getDb();
@@ -67,6 +67,31 @@ async findByLogin(identifier, password) {
 //   return { user, token };
 // },
 
+
+
+async findByLogin(identifier, password, employeeType) {
+  const db = getDb();
+  console.log(`Attempting to find user by userId or employeeId: ${identifier} with employeeType: ${employeeType}`);
+
+  // Try to find by userId or employeeId AND employeeType
+  const user = await db.collection("Users").findOne({
+    $and: [
+      { $or: [{ userId: identifier }, { employeeId: identifier }] },
+      { employeeType: employeeType }
+    ]
+  });
+
+  if (!user) {
+    console.log(`User not found: ${identifier} with employeeType: ${employeeType}`);
+    return null;
+  }
+
+  console.log(`User found, comparing password for: ${identifier}`);
+  const isMatch = await bcrypt.compare(password, user.password);
+  console.log(`Password match result for ${identifier}: ${isMatch}`);
+
+  return isMatch ? user : null;
+},
 async createUser(data) {
   const db = getDb();
   const hashedPassword = await bcrypt.hash(data.password, 10);
